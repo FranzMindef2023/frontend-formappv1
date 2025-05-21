@@ -10,6 +10,7 @@ import NotFound from './pages/NotFound';
 import PrivateLayout from './layouts/PrivateLayout';
 import GraciasPorRegistrarte from './pages/GraciasPorRegistrarte';
 import GraciasPorConsultar from './pages/GraciasPorConsultar';
+import Preinscritos from './pages/Preinscritos';
 
 const App: React.FC = () => {
   return (
@@ -34,6 +35,16 @@ const App: React.FC = () => {
             <PrivateRoute>
               <PrivateLayout>
                 <Dashboard />
+              </PrivateLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/Preinscritos"
+          element={
+            <PrivateRoute>
+              <PrivateLayout>
+                <Preinscritos />
               </PrivateLayout>
             </PrivateRoute>
           }

@@ -30,7 +30,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose }) => {
 
   const menuItems = [
     { text: 'Inicio', icon: <Home />, path: '/dashboard' },
-    { text: 'Productos', icon: <Inventory2 />, path: '/dashboard/productos' },
+    { text: 'Pre Inscritos', icon: <Inventory2 />, path: '/Preinscritos' },
     { text: 'Puntos y Ranking', icon: <EmojiEvents />, path: '/dashboard/ranking' },
     { text: 'Preguntas frecuentes', icon: <HelpOutline />, path: '/dashboard/faq' }
   ];

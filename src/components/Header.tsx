@@ -187,7 +187,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               Salir
             </MenuItem>
           </Menu>
+          
         </Box>
+        
       </Toolbar>
     </AppBar>
   );

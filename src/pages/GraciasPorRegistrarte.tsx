@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useState} from 'react';
 import {
   Box,
   Typography,
@@ -13,6 +13,9 @@ import YouTubeIcon from '@mui/icons-material/YouTube';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import Carousel from 'react-material-ui-carousel';
 import ModalPreRegistro from '../components/ModalPreRegistro';
+import TikTokIcon from '../components/icons/TikTokIcon';
+import Headerweb from '../components/Headerweb';
+import TouchAppIcon from '@mui/icons-material/TouchApp';
 
 
 const slides = [
@@ -39,24 +42,31 @@ const slides = [
 const GraciasPorRegistrarte: React.FC = () => {
   const navigate = useNavigate();
   const [openModal, setOpenModal] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const handleToggleSidebar = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
 
   return (
     <Box sx={{ backgroundColor: '#191c1f', color: '#FAFBFC', minHeight: '100vh', pt: 4 }}>
+      <Headerweb onToggleSidebar={handleToggleSidebar} />
+      {/* Separador visual */}
+      <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
       <Container maxWidth="md">
         <Box textAlign="center" mb={4}>
-          <img
+          {/* <img
             src="https://www.mindef.gob.bo/sites/default/files/minlogo.png"
             alt="Ministerio de Defensa"
             style={{ maxWidth: 220, marginBottom: 20 }}
-          />
+          /> */}
           <Typography variant="h4" fontWeight="bold" color="#F4511E" gutterBottom>
-            ¡Gracias por tu registro!
+            Pre Registro Servicio Militar Obligatorio
           </Typography>
           <Typography variant="body1" sx={{ mb: 3 }}>
             Tus datos han sido enviados correctamente. Te contactaremos si eres seleccionado para continuar con el proceso.
           </Typography>
-          <Button
+          {/* <Button
             variant="contained"
             onClick={() => navigate('/')}
             sx={{
@@ -69,7 +79,7 @@ const GraciasPorRegistrarte: React.FC = () => {
             }}
           >
             Volver al inicio
-          </Button>
+          </Button> */}
         </Box>
 
         <Carousel
@@ -97,7 +107,7 @@ const GraciasPorRegistrarte: React.FC = () => {
                 sx={{
                   position: 'absolute',
                   inset: 0,
-                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.85))',
+                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.4))',
                   color: '#fff',
                   display: 'flex',
                   flexDirection: 'column',
@@ -150,7 +160,7 @@ const GraciasPorRegistrarte: React.FC = () => {
         }}
         >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Crea tu cuenta gratis
+          {/* Crea tu cuenta gratis */}
         </Typography>
         <Typography variant="h6" gutterBottom>
           Realiza tus primeras ventas en pocos pasos sin invertir nada para comenzar
@@ -168,7 +178,9 @@ const GraciasPorRegistrarte: React.FC = () => {
             py: 1.5,
             '&:hover': { backgroundColor: '#eee' }
           }}
+          startIcon={<TouchAppIcon />}
         >
+          
           Regístrate gratis →
         </Button>
       </Box>
@@ -249,7 +261,7 @@ const GraciasPorRegistrarte: React.FC = () => {
             '&:hover': { backgroundColor: '#00c9c2' }
           }}
         >
-          <SportsEsportsIcon />
+          <TikTokIcon />
         </IconButton>
       </Box>
 
