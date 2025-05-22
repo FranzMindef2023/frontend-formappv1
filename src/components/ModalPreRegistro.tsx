@@ -7,7 +7,12 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { enviarPreinscripcion } from '../services/preinscripcion';
-import { getDepartamentos, getMunicipiosByDepartamento } from '../services/ubicacion';
+import {
+  getDepartamentos,
+  getMunicipiosByDepartamento,
+  getZonasGeograficas,
+  getZonaByDepartamento
+} from '../services/ubicacion';
 import { getProvinciasByDepartamento } from '../services/ubicacionesum';
 
 interface ModalPreRegistroProps {
@@ -19,14 +24,16 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [alertOpen, setAlertOpen] = useState(false);
   const [departamentos, setDepartamentos] = useState([]);
+  const [zonasdepartamento, setZonasDepartamento] = useState([]);
   const [municipios, setMunicipios] = useState([]);
   const [provincias, setProvincias] = useState([]);
+  const [zonasGeograficas, setZonasGeograficas] = useState([]);
 
   const formik = useFormik({
     initialValues: {
       nombres: '',
-      apellido1: '',
-      apellido2: '',
+      primer_apellido: '',
+      segundo_apellido: '',
       ci: '',
       celular: '',
       lugar_expedicion: '',
@@ -34,12 +41,13 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
       lugarNacimiento: '',
       departamento: '',
       localidad: '',
-      departamento_nacimiento: ''
+      departamento_nacimiento: '',
+      zona_geografica: '',
     },
     validationSchema: Yup.object({
       nombres: Yup.string().required().matches(/^[A-ZÁÉÍÓÚÑ ]+$/, 'Solo mayúsculas'),
-      apellido1: Yup.string().nullable().matches(/^[A-ZÁÉÍÓÚÑ ]*$/, 'Solo mayúsculas'),
-      apellido2: Yup.string().nullable().matches(/^[A-ZÁÉÍÓÚÑ ]*$/, 'Solo mayúsculas'),
+      primer_apellido: Yup.string().nullable().matches(/^[A-ZÁÉÍÓÚÑ ]*$/, 'Solo mayúsculas'),
+      segundo_apellido: Yup.string().nullable().matches(/^[A-ZÁÉÍÓÚÑ ]*$/, 'Solo mayúsculas'),
       ci: Yup.string()
           .required('Requerido')
           .matches(/^\d{5,8}$/, 'Debe tener entre 5 y 8 dígitos numéricos'),
@@ -60,21 +68,24 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
               hoy.getMonth() < nacimiento.getMonth() ||
               (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate());
             if (aunNoCumpleAnios) edad--;
-            return edad >= 16 && edad <= 18;
+            return edad >= 17 && edad <= 22;
           }
         ),
       lugarNacimiento: Yup.string().required('Requerido'),
       departamento: Yup.string().required('Requerido'),
       departamento_nacimiento: Yup.string().required('Requerido'),
-      localidad: Yup.string().required('Requerido')
+      localidad: Yup.string().required('Requerido'),
+      zona_geografica: Yup.string().required('Requerido'),
     }),
     onSubmit: async (values) => {
       if (!recaptchaToken) return setAlertOpen(true);
       try {
         await enviarPreinscripcion({
           ...values,
-          id_departamento: values.departamento,
-          id_lugar_nacimiento: values.lugarNacimiento,
+          id_departamento_presenta:values.departamento,
+          id_departamento: values.departamento_nacimiento,
+          id_lugar_recidencia: values.lugarNacimiento,
+          id_centro_reclutamiento:values.localidad,
           status: true,
           token: recaptchaToken
         });
@@ -112,6 +123,10 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
     }
   }, [formik.values.departamento_nacimiento]);
 
+   useEffect(() => {
+    getZonasGeograficas().then(res => setZonasGeograficas(res.data));
+  }, []);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <Box sx={{ backgroundColor: '#fff', color: '#333' }}>
@@ -131,8 +146,8 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
             <Grid container spacing={2}>
               {[
                 { name: 'nombres', label: 'Nombres' },
-                { name: 'apellido1', label: 'Primer Apellido' },
-                { name: 'apellido2', label: 'Segundo Apellido' },
+                { name: 'primer_apellido', label: 'Primer Apellido' },
+                { name: 'segundo_apellido', label: 'Segundo Apellido' },
                 { name: 'ci', label: 'Cédula de Identidad' }
               ].map(({ name, label }) => (
                 <Grid item xs={12} sm={6} key={name}>
@@ -262,6 +277,36 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
               <Grid item xs={12} sm={6}>
                 <TextField
                   select
+                  name="zona_geografica"
+                  label="Zona Geográfica"
+                  fullWidth
+                  variant="outlined"
+                  size="small"
+                  value={formik.values.zona_geografica}
+                 onChange={(e) => {
+                  const selectedZonaId = parseInt(e.target.value, 10);
+                  formik.setFieldValue('zona_geografica', selectedZonaId);
+
+                  getZonaByDepartamento(selectedZonaId).then((res) => {
+                    setZonasDepartamento(res.data);              // solo departamentos de esa zona
+                    formik.setFieldValue('departamento', '');
+                    setMunicipios([]);
+                  });
+                }}
+                                  onBlur={formik.handleBlur}
+                  error={formik.touched.zona_geografica && Boolean(formik.errors.zona_geografica)}
+                  helperText={formik.touched.zona_geografica && formik.errors.zona_geografica}
+                >
+                  {zonasGeograficas.map((zona: any) => (
+                    <MenuItem key={zona.id} value={zona.id}>
+                      {zona.nombre}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  select
                   name="departamento"
                   label="Departamento"
                   fullWidth
@@ -280,7 +325,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
                   error={formik.touched.departamento && Boolean(formik.errors.departamento)}
                   helperText={formik.touched.departamento && formik.errors.departamento}
                 >
-                  {departamentos.map((dpto: any) => (
+                  {zonasdepartamento.map((dpto: any) => (
                     <MenuItem key={dpto.id} value={dpto.id}>{dpto.nombre}</MenuItem>
                   ))}
                 </TextField>
@@ -290,7 +335,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
                 <TextField
                   select
                   name="localidad"
-                  label="Provincia Unidad Militar"
+                  label="Ubicacion Unidad Militar"
                   fullWidth
                   variant="outlined"
                   size="small"
