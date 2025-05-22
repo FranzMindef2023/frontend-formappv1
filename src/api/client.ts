@@ -2,8 +2,8 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 const client = axios.create({
-  // baseURL: 'http://laravel-appv1.local/api',
-  baseURL: 'http://formlar-appv1.local/api',
+  baseURL: 'http://laravel-appv1.local/api',
+  // baseURL: 'http://formlar-appv1.local/api',
   headers: {
     'Content-Type': 'application/json',
   },

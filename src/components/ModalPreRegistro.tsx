@@ -8,6 +8,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { enviarPreinscripcion } from '../services/preinscripcion';
 import { getDepartamentos, getMunicipiosByDepartamento } from '../services/ubicacion';
+import { getProvinciasByDepartamento } from '../services/ubicacionesum';
 
 interface ModalPreRegistroProps {
   open: boolean;
@@ -97,7 +98,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
 
   useEffect(() => {
     if (formik.values.departamento) {
-      getMunicipiosByDepartamento(Number(formik.values.departamento)).then(res => setMunicipios(res.data));
+      getProvinciasByDepartamento(Number(formik.values.departamento)).then(res => setMunicipios(res.data));
     } else {
       setMunicipios([]);
     }
@@ -270,7 +271,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
                   onChange={(e) => {
                     const selectedId = parseInt(e.target.value, 10);
                     formik.setFieldValue('departamento', selectedId);
-                    getMunicipiosByDepartamento(selectedId).then((res) => {
+                    getProvinciasByDepartamento(selectedId).then((res) => {
                       setMunicipios(res.data);
                       formik.setFieldValue('localidad', '');
                     });
@@ -289,7 +290,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
                 <TextField
                   select
                   name="localidad"
-                  label="Unidad Militar"
+                  label="Provincia Unidad Militar"
                   fullWidth
                   variant="outlined"
                   size="small"
