@@ -6,6 +6,7 @@ import {
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+import Tesseract from 'tesseract.js';
 import { enviarPreinscripcion } from '../services/preinscripcion';
 import {
   getDepartamentos,
@@ -28,6 +29,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
   const [municipios, setMunicipios] = useState([]);
   const [provincias, setProvincias] = useState([]);
   const [zonasGeograficas, setZonasGeograficas] = useState([]);
+  const [ocrLoading, setOcrLoading] = useState(false);
 
   const formik = useFormik({
     initialValues: {
@@ -45,32 +47,30 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
       zona_geografica: '',
     },
     validationSchema: Yup.object({
-      nombres: Yup.string().required().matches(/^[A-ZÁÉÍÓÚÑ ]+$/, 'Solo mayúsculas'),
-      primer_apellido: Yup.string().nullable().matches(/^[A-ZÁÉÍÓÚÑ ]*$/, 'Solo mayúsculas'),
-      segundo_apellido: Yup.string().nullable().matches(/^[A-ZÁÉÍÓÚÑ ]*$/, 'Solo mayúsculas'),
-      ci: Yup.string()
-          .required('Requerido')
-          .matches(/^\d{5,8}$/, 'Debe tener entre 5 y 8 dígitos numéricos'),
-      celular: Yup.string().required('Requerido').matches(/^\d{7,8}$/, 'Debe tener 7 u 8 dígitos'),
+      nombres: Yup.string().required('Requerido'),
+      primer_apellido: Yup.string().nullable(),
+      segundo_apellido: Yup.string().nullable(),
+      ci: Yup.string().required('Requerido'),
+      celular: Yup.string().required('Requerido'),
       lugar_expedicion: Yup.string().required('Requerido'),
       fecha_nacimiento: Yup.date()
-        .required('Requerido')
-        .max(new Date(), 'Fecha inválida')
-        .test(
-          'edad-actual',
-          'Debes tener entre 16 y 18 años de edad actual',
-          function (value) {
-            if (!value) return false;
-            const hoy = new Date();
-            const nacimiento = new Date(value);
-            let edad = hoy.getFullYear() - nacimiento.getFullYear();
-            const aunNoCumpleAnios =
-              hoy.getMonth() < nacimiento.getMonth() ||
-              (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate());
-            if (aunNoCumpleAnios) edad--;
-            return edad >= 17 && edad <= 22;
-          }
-        ),
+              .required('Requerido')
+              .max(new Date(), 'Fecha inválida')
+              .test(
+                'edad-actual',
+                'Debes tener entre 16 y 18 años de edad actual',
+                function (value) {
+                  if (!value) return false;
+                  const hoy = new Date();
+                  const nacimiento = new Date(value);
+                  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+                  const aunNoCumpleAnios =
+                    hoy.getMonth() < nacimiento.getMonth() ||
+                    (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate());
+                  if (aunNoCumpleAnios) edad--;
+                  return edad >= 17 && edad <= 22;
+                }
+              ),
       lugarNacimiento: Yup.string().required('Requerido'),
       departamento: Yup.string().required('Requerido'),
       departamento_nacimiento: Yup.string().required('Requerido'),
@@ -82,10 +82,10 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
       try {
         await enviarPreinscripcion({
           ...values,
-          id_departamento_presenta:values.departamento,
+          id_departamento_presenta: values.departamento,
           id_departamento: values.departamento_nacimiento,
           id_lugar_recidencia: values.lugarNacimiento,
-          id_centro_reclutamiento:values.localidad,
+          id_centro_reclutamiento: values.localidad,
           status: true,
           token: recaptchaToken
         });
@@ -99,33 +99,85 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
     }
   });
 
-  const handleInputUppercase = (e: React.ChangeEvent<HTMLInputElement>) => {
-    formik.setFieldValue(e.target.name, e.target.value.toUpperCase());
+const handleOCR = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setOcrLoading(true);
+  const reader = new FileReader();
+
+  reader.onload = async () => {
+    const imageDataUrl = reader.result as string;
+
+    try {
+      const result = await Tesseract.recognize(imageDataUrl, 'spa', {
+        logger: m => console.log(m)
+      });
+
+      const text = result.data.text.toUpperCase();
+      console.log("Texto detectado:", text);
+
+      // CI
+      const ciMatch = text.match(/\b\d{6,9}\b/);
+      if (ciMatch) {
+        formik.setFieldValue('ci', ciMatch[0]);
+      }
+
+      // Nombre completo: busca por línea que tenga nombre (ej: FRANZ VASQUEZ MENCIA)
+      const nombreCompletoMatch = text.match(/FRANZ\s+[A-ZÁÉÍÓÚÑ]+(?:\s+[A-ZÁÉÍÓÚÑ]+)?/);
+      if (nombreCompletoMatch) {
+        const partes = nombreCompletoMatch[0].trim().split(/\s+/);
+        formik.setFieldValue('nombres', partes[0] || '');
+        formik.setFieldValue('primer_apellido', partes[1] || '');
+        formik.setFieldValue('segundo_apellido', partes[2] || '');
+      }
+
+      // Fecha de nacimiento
+      const fechaMatch = text.match(/(\d{1,2})\s+DE\s+([A-ZÁÉÍÓÚÑ]+)\s+DE\s+(\d{4})/);
+      if (fechaMatch) {
+        const [_, dia, mesTexto, anio] = fechaMatch;
+        const meses: { [key: string]: string } = {
+          ENERO: '01', FEBRERO: '02', MARZO: '03', ABRIL: '04',
+          MAYO: '05', JUNIO: '06', JULIO: '07', AGOSTO: '08',
+          SEPTIEMBRE: '09', OCTUBRE: '10', NOVIEMBRE: '11', DICIEMBRE: '12'
+        };
+        const mesNum = meses[mesTexto] || '01';
+        const diaNum = dia.padStart(2, '0');
+        const fechaFormateada = `${anio}-${mesNum}-${diaNum}`;
+        formik.setFieldValue('fecha_nacimiento', fechaFormateada);
+      }
+
+    } catch (error) {
+      console.error('Error OCR:', error);
+    }
+
+    setOcrLoading(false);
   };
 
+  reader.readAsDataURL(file);
+};
+
+
+
+ const handleInputUppercase = (e: React.ChangeEvent<HTMLInputElement>) => {
+    formik.setFieldValue(e.target.name, e.target.value.toUpperCase());
+  };
   useEffect(() => {
     getDepartamentos().then(res => setDepartamentos(res.data));
+    getZonasGeograficas().then(res => setZonasGeograficas(res.data));
   }, []);
 
   useEffect(() => {
-    if (formik.values.departamento) {
+    if (formik.values.departamento)
       getProvinciasByDepartamento(Number(formik.values.departamento)).then(res => setMunicipios(res.data));
-    } else {
-      setMunicipios([]);
-    }
+    else setMunicipios([]);
   }, [formik.values.departamento]);
 
   useEffect(() => {
-    if (formik.values.departamento_nacimiento) {
+    if (formik.values.departamento_nacimiento)
       getMunicipiosByDepartamento(Number(formik.values.departamento_nacimiento)).then(res => setProvincias(res.data));
-    } else {
-      setProvincias([]);
-    }
+    else setProvincias([]);
   }, [formik.values.departamento_nacimiento]);
-
-   useEffect(() => {
-    getZonasGeograficas().then(res => setZonasGeograficas(res.data));
-  }, []);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -133,13 +185,30 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
         <DialogTitle textAlign="center" sx={{ fontWeight: 'bold', color: '#F4511E' }}>
           Empieza a Registrarte gratis
         </DialogTitle>
-
         <DialogContent>
           <Snackbar open={alertOpen} autoHideDuration={4000} onClose={() => setAlertOpen(false)}>
             <Alert severity="warning">Por favor completa el reCAPTCHA</Alert>
           </Snackbar>
 
+          <Button component="label" variant="outlined" fullWidth sx={{ mb: 2 }}>
+            Subir CI para reconocimiento OCR
+            <input type="file" hidden accept="image/*" onChange={handleOCR} />
+          </Button>
+
+          {ocrLoading && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Procesando imagen, por favor espera...
+            </Alert>
+          )}
+
+          {/* Aquí continúa tu formulario completo con formik */}
+          <Snackbar open={alertOpen} autoHideDuration={4000} onClose={() => setAlertOpen(false)}>
+            <Alert severity="warning">Por favor completa el reCAPTCHA</Alert>
+          </Snackbar>
+
           <form onSubmit={formik.handleSubmit}>
+
+
             <Typography variant="h6" fontWeight="bold" color="primary" gutterBottom>
               Datos personales
             </Typography>
@@ -354,7 +423,8 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
 
             <Box mt={3} textAlign="center">
               <ReCAPTCHA
-                sitekey="6LeSXDcrAAAAAJjOS5EBBSKGmPE6mgyZOrQuf1H-"
+                // sitekey="6LeSXDcrAAAAAJjOS5EBBSKGmPE6mgyZOrQuf1H-"
+                sitekey="6LdVxkUrAAAAABycqyZfCgTKOFdJ8gkaE0gqYX9w"
                 onChange={(value) => setRecaptchaToken(value)}
               />
             </Box>
@@ -378,6 +448,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
               </Button>
             </DialogActions>
           </form>
+
         </DialogContent>
       </Box>
     </Dialog>
