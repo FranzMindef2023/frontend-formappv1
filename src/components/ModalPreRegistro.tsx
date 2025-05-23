@@ -7,7 +7,7 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import Tesseract from 'tesseract.js';
-import { enviarPreinscripcion } from '../services/preinscripcion';
+import { enviarPreinscripcion , consultarDatosPersona} from '../services/preinscripcion';
 import {
   getDepartamentos,
   getMunicipiosByDepartamento,
@@ -15,6 +15,142 @@ import {
   getZonaByDepartamento
 } from '../services/ubicacion';
 import { getProvinciasByDepartamento } from '../services/ubicacionesum';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+declare module 'jspdf' {
+  interface jsPDF {
+    lastAutoTable: {
+      finalY: number;
+    };
+  }
+}
+
+export const generarFormularioPDF = (values: any) => {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const fechaActual = new Date().toLocaleDateString();
+  const horaActual = new Date().toLocaleTimeString();
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('MINISTERIO DE ECONOMIA Y FINANZAS PUBLICAS', 45, 12);
+  doc.setFontSize(13);
+  doc.text('FORMULARIO DE REGISTRO', 45, 18);
+  doc.text('DE BENEFICIARIO', 45, 24);
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Fecha: ${fechaActual} ${horaActual}`, 145, 12);
+  doc.text(`Gestión: 2025`, 145, 17);
+  doc.text(`Usuario: USUARIOINTERNET`, 145, 22);
+  doc.text(`Ambiente: PRODUCCION`, 145, 27);
+  doc.text(`Reporte: RBenRegBeneficiario`, 145, 32);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Categoría', 14, 38);
+  doc.text('Sub Categoría:', 60, 38);
+  doc.text('N° de Beneficiario:', 140, 38);
+  doc.setFont('helvetica', 'normal');
+  doc.text('PRIVADO', 34, 38);
+  doc.text('NATURAL', 94, 38);
+  doc.text('1189762', 177, 38);
+
+  const sectionTitle = (title: string, offsetY = 3) => {
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable?.finalY + offsetY || 44,
+      head: [[title]],
+      body: [],
+      theme: 'plain',
+      styles: { fontSize: 10 },
+      headStyles: {
+        fontStyle: 'bold',
+        fillColor: [230, 230, 230],
+        halign: 'left',
+        textColor: [0, 0, 0],
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0]
+      },
+      tableLineColor: [0, 0, 0],
+      tableLineWidth: 0.5,
+    });
+  };
+
+  const nextTable = (rows: any[][], headers: string[], extraY = 1) =>
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable?.finalY + extraY || 44,
+      head: [headers],
+      body: rows,
+      styles: {
+        fontSize: 9,
+        valign: 'middle',
+        minCellHeight: 6
+      },
+      headStyles: {
+        fontSize: 8,
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        halign: 'center',
+        valign: 'middle',
+        lineColor: [0, 0, 0],
+        lineWidth: 0.5
+      },
+      tableLineColor: [0, 0, 0],
+      tableLineWidth: 0.5
+    });
+
+  sectionTitle('IDENTIFICACION DEL BENEFICIARIO', 6);
+  nextTable([[ 'Cédula de Identidad', values.ci, values.lugar_expedicion, 'BOLIVIA' ]],
+    ['Tipo de Identificación', 'Número Documento', 'Lugar Expedición', 'País']);
+  nextTable([[values.primer_apellido, values.segundo_apellido, values.nombres, '']], ['Primer Apellido', 'Segundo Apellido', 'Nombres', 'Apellido Casada']);
+  nextTable([[`${values.primer_apellido} ${values.segundo_apellido} ${values.nombres}`, '', '']], ['Razón Social', 'Nombre Comercial', 'Registro Empresarial']);
+  nextTable([[values.correo || 'N/D', '', '', '']], ['Correo Electrónico', 'Tipo de Identificación', 'Número Documento Adic.', 'Lugar Expedición Adic.']);
+
+  sectionTitle('DIRECCION DEL BENEFICIARIO');
+  nextTable([['Cochabamba', 'Cochabamba', 'BOLIVIA', '']], ['Ciudad', 'Localidad', 'País', 'Casilla Postal']);
+  nextTable([['Avenida Blanco Galindo km 9 entre calle La Paz', values.celular, '']], ['Dirección', 'Teléfono', 'Fax']);
+
+  sectionTitle('REPRESENTANTES');
+  nextTable([[
+    'Cédula de Identidad',
+    values.ci,
+    `${values.primer_apellido} ${values.segundo_apellido} ${values.nombres}`,
+    'BO',
+    'Titular', '', '', '', 'ACTIVO'
+  ]], ['Tipo Doc.', 'Documento', 'Apellidos y Nombres', 'País', 'Carácter', 'Notaría', 'Num. Poder', 'Fecha Poder', 'Estado']);
+
+  sectionTitle('CUENTAS BANCARIAS');
+  nextTable(
+    values.cuentas_bancarias?.map((c: any) => [
+      c.banco,
+      c.cuenta,
+      c.distrito,
+      c.moneda,
+      c.tipo,
+      c.fecha,
+      c.verificacion,
+      c.estado
+    ]) || [['BANCO UNION S.A.', '10000043422893', 'COCHABAMBA', 'BOLIVIANOS', 'Caja de Ahorros', '31/01/2023', 'Válida', 'ACTIVO']],
+    ['Banco', 'Cuenta', 'Distrito', 'Moneda', 'Tipo de Cuenta', 'Fecha', 'Verificación del Banco', 'Estado']
+  );
+
+  const finalY = (doc as any).lastAutoTable?.finalY || 250;
+  doc.setFontSize(10);
+  doc.text('(Firma del Beneficiario)', 14, finalY + 10);
+  doc.text('(Aclaración de Firma)', 14, finalY + 18);
+  doc.text(`Fecha y usuario creación: ${fechaActual}`, 14, finalY + 26);
+  doc.text(`Fecha y usuario activación: ${fechaActual}`, 14, finalY + 32);
+
+  doc.setFontSize(9);
+  doc.text('Nota: Este formulario tiene validez oficial para efectos de preinscripción y selección militar.', 14, finalY + 42);
+  doc.text('En cumplimiento de la Ley del Servicio Militar Obligatorio N° 954 de 1987.', 14, finalY + 48);
+
+  doc.setFontSize(10);
+  doc.text('Página 1 de 1', 105, 290, { align: 'center' });
+
+  doc.save(`Formulario-${values.ci}.pdf`);
+};
 
 interface ModalPreRegistroProps {
   open: boolean;
@@ -30,6 +166,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
   const [provincias, setProvincias] = useState([]);
   const [zonasGeograficas, setZonasGeograficas] = useState([]);
   const [ocrLoading, setOcrLoading] = useState(false);
+  const [registroExitoso, setRegistroExitoso] = useState(true);
 
   const formik = useFormik({
     initialValues: {
@@ -79,6 +216,18 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
     }),
     onSubmit: async (values) => {
       if (!recaptchaToken) return setAlertOpen(true);
+      const response = await consultarDatosPersona({
+        nombres: values.nombres,
+        ci: values.ci,
+        fecha_nacimiento: values.fecha_nacimiento,
+        primer_apellido: values.primer_apellido,
+        segundo_apellido:values.segundo_apellido,
+      });
+
+      console.log(response.data.data);
+
+      return;
+      
       try {
         await enviarPreinscripcion({
           ...values,
@@ -89,76 +238,75 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
           status: true,
           token: recaptchaToken
         });
-        onClose();
+        // ✅ Mostrar botón de PDF
+        setRegistroExitoso(true);
+        //onClose();
       } catch (error) {
         console.error('Error al registrar:', error);
       }
       formik.resetForm();
       setRecaptchaToken(null);
-      onClose();
+      // onClose();
     }
   });
 
-const handleOCR = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+  const handleOCR = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  setOcrLoading(true);
-  const reader = new FileReader();
+    setOcrLoading(true);
+    const reader = new FileReader();
 
-  reader.onload = async () => {
-    const imageDataUrl = reader.result as string;
+    reader.onload = async () => {
+      const imageDataUrl = reader.result as string;
 
-    try {
-      const result = await Tesseract.recognize(imageDataUrl, 'spa', {
-        logger: m => console.log(m)
-      });
+      try {
+        const result = await Tesseract.recognize(imageDataUrl, 'spa', {
+          logger: m => console.log(m)
+        });
 
-      const text = result.data.text.toUpperCase();
-      console.log("Texto detectado:", text);
+        const text = result.data.text.toUpperCase();
+        console.log("Texto detectado:", text);
 
-      // CI
-      const ciMatch = text.match(/\b\d{6,9}\b/);
-      if (ciMatch) {
-        formik.setFieldValue('ci', ciMatch[0]);
+        // CI
+        const ciMatch = text.match(/\b\d{6,9}\b/);
+        if (ciMatch) {
+          formik.setFieldValue('ci', ciMatch[0]);
+        }
+
+        // Nombre completo: busca por línea que tenga nombre (ej: FRANZ VASQUEZ MENCIA)
+        const nombreCompletoMatch = text.match(/FRANZ\s+[A-ZÁÉÍÓÚÑ]+(?:\s+[A-ZÁÉÍÓÚÑ]+)?/);
+        if (nombreCompletoMatch) {
+          const partes = nombreCompletoMatch[0].trim().split(/\s+/);
+          formik.setFieldValue('nombres', partes[0] || '');
+          formik.setFieldValue('primer_apellido', partes[1] || '');
+          formik.setFieldValue('segundo_apellido', partes[2] || '');
+        }
+
+        // Fecha de nacimiento
+        const fechaMatch = text.match(/(\d{1,2})\s+DE\s+([A-ZÁÉÍÓÚÑ]+)\s+DE\s+(\d{4})/);
+        if (fechaMatch) {
+          const [_, dia, mesTexto, anio] = fechaMatch;
+          const meses: { [key: string]: string } = {
+            ENERO: '01', FEBRERO: '02', MARZO: '03', ABRIL: '04',
+            MAYO: '05', JUNIO: '06', JULIO: '07', AGOSTO: '08',
+            SEPTIEMBRE: '09', OCTUBRE: '10', NOVIEMBRE: '11', DICIEMBRE: '12'
+          };
+          const mesNum = meses[mesTexto] || '01';
+          const diaNum = dia.padStart(2, '0');
+          const fechaFormateada = `${anio}-${mesNum}-${diaNum}`;
+          formik.setFieldValue('fecha_nacimiento', fechaFormateada);
+        }
+
+      } catch (error) {
+        console.error('Error OCR:', error);
       }
 
-      // Nombre completo: busca por línea que tenga nombre (ej: FRANZ VASQUEZ MENCIA)
-      const nombreCompletoMatch = text.match(/FRANZ\s+[A-ZÁÉÍÓÚÑ]+(?:\s+[A-ZÁÉÍÓÚÑ]+)?/);
-      if (nombreCompletoMatch) {
-        const partes = nombreCompletoMatch[0].trim().split(/\s+/);
-        formik.setFieldValue('nombres', partes[0] || '');
-        formik.setFieldValue('primer_apellido', partes[1] || '');
-        formik.setFieldValue('segundo_apellido', partes[2] || '');
-      }
+      setOcrLoading(false);
+    };
 
-      // Fecha de nacimiento
-      const fechaMatch = text.match(/(\d{1,2})\s+DE\s+([A-ZÁÉÍÓÚÑ]+)\s+DE\s+(\d{4})/);
-      if (fechaMatch) {
-        const [_, dia, mesTexto, anio] = fechaMatch;
-        const meses: { [key: string]: string } = {
-          ENERO: '01', FEBRERO: '02', MARZO: '03', ABRIL: '04',
-          MAYO: '05', JUNIO: '06', JULIO: '07', AGOSTO: '08',
-          SEPTIEMBRE: '09', OCTUBRE: '10', NOVIEMBRE: '11', DICIEMBRE: '12'
-        };
-        const mesNum = meses[mesTexto] || '01';
-        const diaNum = dia.padStart(2, '0');
-        const fechaFormateada = `${anio}-${mesNum}-${diaNum}`;
-        formik.setFieldValue('fecha_nacimiento', fechaFormateada);
-      }
-
-    } catch (error) {
-      console.error('Error OCR:', error);
-    }
-
-    setOcrLoading(false);
+    reader.readAsDataURL(file);
   };
-
-  reader.readAsDataURL(file);
-};
-
-
-
  const handleInputUppercase = (e: React.ChangeEvent<HTMLInputElement>) => {
     formik.setFieldValue(e.target.name, e.target.value.toUpperCase());
   };
@@ -190,10 +338,10 @@ const handleOCR = async (e: React.ChangeEvent<HTMLInputElement>) => {
             <Alert severity="warning">Por favor completa el reCAPTCHA</Alert>
           </Snackbar>
 
-          <Button component="label" variant="outlined" fullWidth sx={{ mb: 2 }}>
+          {/* <Button component="label" variant="outlined" fullWidth sx={{ mb: 2 }}>
             Subir CI para reconocimiento OCR
             <input type="file" hidden accept="image/*" onChange={handleOCR} />
-          </Button>
+          </Button> */}
 
           {ocrLoading && (
             <Alert severity="info" sx={{ mb: 2 }}>
@@ -423,8 +571,8 @@ const handleOCR = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
             <Box mt={3} textAlign="center">
               <ReCAPTCHA
-                // sitekey="6LeSXDcrAAAAAJjOS5EBBSKGmPE6mgyZOrQuf1H-"
-                sitekey="6LdVxkUrAAAAABycqyZfCgTKOFdJ8gkaE0gqYX9w"
+                sitekey="6LeSXDcrAAAAAJjOS5EBBSKGmPE6mgyZOrQuf1H-"
+                // sitekey="6LdVxkUrAAAAABycqyZfCgTKOFdJ8gkaE0gqYX9w"
                 onChange={(value) => setRecaptchaToken(value)}
               />
             </Box>
@@ -434,6 +582,7 @@ const handleOCR = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 onClick={() => {
                   formik.resetForm();
                   setRecaptchaToken(null);
+                  setRegistroExitoso(false);
                   onClose();
                 }}
                 sx={{ backgroundColor: '#f44336', color: '#fff', '&:hover': { backgroundColor: '#d32f2f' } }}
