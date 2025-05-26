@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import axios, { AxiosError } from 'axios';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, TextField, Grid, MenuItem, Box, Snackbar, Alert, Typography
+  Button, TextField, Grid, MenuItem, Box, Snackbar, Alert, Typography,
 } from '@mui/material';
+import PrintIcon from '@mui/icons-material/Print';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -34,10 +36,10 @@ export const generarFormularioPDF = (values: any) => {
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('MINISTERIO DE ECONOMIA Y FINANZAS PUBLICAS', 45, 12);
+  doc.text('MINISTERIO DE DEFENSA DE LAS FF.AA.', 45, 12);
   doc.setFontSize(13);
   doc.text('FORMULARIO DE REGISTRO', 45, 18);
-  doc.text('DE BENEFICIARIO', 45, 24);
+  doc.text('DEL SERVICIO MILITAR', 45, 24);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
@@ -100,27 +102,27 @@ export const generarFormularioPDF = (values: any) => {
       tableLineWidth: 0.5
     });
 
-  sectionTitle('IDENTIFICACION DEL BENEFICIARIO', 6);
+  sectionTitle('DATOS PERSONALES', 6);
   nextTable([[ 'Cédula de Identidad', values.ci, values.lugar_expedicion, 'BOLIVIA' ]],
     ['Tipo de Identificación', 'Número Documento', 'Lugar Expedición', 'País']);
   nextTable([[values.primer_apellido, values.segundo_apellido, values.nombres, '']], ['Primer Apellido', 'Segundo Apellido', 'Nombres', 'Apellido Casada']);
-  nextTable([[`${values.primer_apellido} ${values.segundo_apellido} ${values.nombres}`, '', '']], ['Razón Social', 'Nombre Comercial', 'Registro Empresarial']);
+  // nextTable([[`${values.primer_apellido} ${values.segundo_apellido} ${values.nombres}`, '', '']], ['Razón Social', 'Nombre Comercial', 'Registro Empresarial']);
   nextTable([[values.correo || 'N/D', '', '', '']], ['Correo Electrónico', 'Tipo de Identificación', 'Número Documento Adic.', 'Lugar Expedición Adic.']);
 
-  sectionTitle('DIRECCION DEL BENEFICIARIO');
-  nextTable([['Cochabamba', 'Cochabamba', 'BOLIVIA', '']], ['Ciudad', 'Localidad', 'País', 'Casilla Postal']);
+  sectionTitle('LUGAR DE RESIDENCIA ACTUAL');
+  nextTable([['Cochabamba', 'Cochabamba', 'BOLIVIA', '']], ['Departamento', 'Provincia', 'País', 'Casilla Postal']);
   nextTable([['Avenida Blanco Galindo km 9 entre calle La Paz', values.celular, '']], ['Dirección', 'Teléfono', 'Fax']);
 
-  sectionTitle('REPRESENTANTES');
+  sectionTitle('LUGAR DE PRESENTACIÓN A LA UNIDAD MILITAR');
   nextTable([[
     'Cédula de Identidad',
     values.ci,
     `${values.primer_apellido} ${values.segundo_apellido} ${values.nombres}`,
     'BO',
-    'Titular', '', '', '', 'ACTIVO'
-  ]], ['Tipo Doc.', 'Documento', 'Apellidos y Nombres', 'País', 'Carácter', 'Notaría', 'Num. Poder', 'Fecha Poder', 'Estado']);
+    'Titular', '', 
+  ]], ['Depto', 'Provincia', 'Unidad Militara', 'País', 'Fecha de Presentación', 'Hora']);
 
-  sectionTitle('CUENTAS BANCARIAS');
+  sectionTitle('UNIDAD MILITAR DONDE REALIZARÁ EL SERVICIO MILITAR');
   nextTable(
     values.cuentas_bancarias?.map((c: any) => [
       c.banco,
@@ -131,8 +133,8 @@ export const generarFormularioPDF = (values: any) => {
       c.fecha,
       c.verificacion,
       c.estado
-    ]) || [['BANCO UNION S.A.', '10000043422893', 'COCHABAMBA', 'BOLIVIANOS', 'Caja de Ahorros', '31/01/2023', 'Válida', 'ACTIVO']],
-    ['Banco', 'Cuenta', 'Distrito', 'Moneda', 'Tipo de Cuenta', 'Fecha', 'Verificación del Banco', 'Estado']
+    ]) || [['BANCO UNION S.A.', '10000043422893', 'COCHABAMBA', 'BOLIVIANOS', 'Caja de Ahorros']],
+    ['Depto', 'Provincia', 'Unidad Militar', 'País', 'Fecha de Presentación', 'Hora']
   );
 
   const finalY = (doc as any).lastAutoTable?.finalY || 250;
@@ -167,6 +169,11 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
   const [zonasGeograficas, setZonasGeograficas] = useState([]);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [registroExitoso, setRegistroExitoso] = useState(true);
+  const [backendError, setBackendError] = useState<string | null>(null);
+  const [registroMensaje, setRegistroMensaje] = useState<string | null>(null);
+  const [mostrarBotonPDF, setMostrarBotonPDF] = useState(false);
+
+
 
   const formik = useFormik({
     initialValues: {
@@ -182,13 +189,16 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
       localidad: '',
       departamento_nacimiento: '',
       zona_geografica: '',
+      direccion: '', // <-- nuevo campo
     },
     validationSchema: Yup.object({
       nombres: Yup.string().required('Requerido'),
       primer_apellido: Yup.string().nullable(),
       segundo_apellido: Yup.string().nullable(),
       ci: Yup.string().required('Requerido'),
-      celular: Yup.string().required('Requerido'),
+      celular: Yup.string()
+      .required('El número de celular es obligatorio.')
+      .matches(/^[6-7]\d{7}$/, 'El número de celular debe comenzar con 6 o 7 y tener 8 dígitos.'),
       lugar_expedicion: Yup.string().required('Requerido'),
       fecha_nacimiento: Yup.date()
               .required('Requerido')
@@ -213,7 +223,10 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
       departamento_nacimiento: Yup.string().required('Requerido'),
       localidad: Yup.string().required('Requerido'),
       zona_geografica: Yup.string().required('Requerido'),
-    }),
+      direccion: Yup.string()
+      .required('La dirección es requerida.')
+      .min(5, 'La dirección es muy corta.'),
+        }),
     onSubmit: async (values) => {
       if (!recaptchaToken) return setAlertOpen(true);
       const response = await consultarDatosPersona({
@@ -223,13 +236,14 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
         primer_apellido: values.primer_apellido,
         segundo_apellido:values.segundo_apellido,
       });
+      if(response.data==true){
+       setMostrarBotonPDF(true); // ✅ ya estaba registrado
+        return;
+      }
 
-      console.log(response.data.data);
-
-      return;
       
       try {
-        await enviarPreinscripcion({
+        const register= await enviarPreinscripcion({
           ...values,
           id_departamento_presenta: values.departamento,
           id_departamento: values.departamento_nacimiento,
@@ -238,12 +252,27 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
           status: true,
           token: recaptchaToken
         });
+        // ✅ Mostrar mensaje del backend
+        setRegistroMensaje(register.data.message); // <-- Este viene del backend
         // ✅ Mostrar botón de PDF
         setRegistroExitoso(true);
+        setMostrarBotonPDF(true); // ✅ registro nuevo exitoso
         //onClose();
-      } catch (error) {
-        console.error('Error al registrar:', error);
+      } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 422) {
+          const errores = error.response.data.errors;
+          const mensaje = Object.values(errores)
+            .map((msgs) => (msgs as string[])[0])
+            .join('. ');
+          setBackendError(mensaje);
+        } else {
+          setBackendError("Error del servidor.");
+        }
+      } else {
+        setBackendError("Error inesperado.");
       }
+    }
       formik.resetForm();
       setRecaptchaToken(null);
       // onClose();
@@ -348,7 +377,20 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
               Procesando imagen, por favor espera...
             </Alert>
           )}
-
+          {registroMensaje && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {registroMensaje}
+            </Alert>
+          )}
+          <Snackbar
+            open={Boolean(backendError)}
+            autoHideDuration={6000}
+            onClose={() => setBackendError(null)}
+          >
+            <Alert onClose={() => setBackendError(null)} severity="error" sx={{ width: '100%' }}>
+              {backendError}
+            </Alert>
+          </Snackbar>
           {/* Aquí continúa tu formulario completo con formik */}
           <Snackbar open={alertOpen} autoHideDuration={4000} onClose={() => setAlertOpen(false)}>
             <Alert severity="warning">Por favor completa el reCAPTCHA</Alert>
@@ -483,6 +525,23 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
                   ))}
                 </TextField>
               </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  name="direccion"
+                  label="Dirección"
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  maxRows={2}
+                  variant="outlined"
+                  size="small"
+                  value={formik.values.direccion}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.direccion && Boolean(formik.errors.direccion)}
+                  helperText={formik.touched.direccion && formik.errors.direccion}
+                />
+              </Grid>
             </Grid>
 
             <Box my={3} />
@@ -571,30 +630,46 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
 
             <Box mt={3} textAlign="center">
               <ReCAPTCHA
-                sitekey="6LeSXDcrAAAAAJjOS5EBBSKGmPE6mgyZOrQuf1H-"
-                // sitekey="6LdVxkUrAAAAABycqyZfCgTKOFdJ8gkaE0gqYX9w"
+                // sitekey="6LeSXDcrAAAAAJjOS5EBBSKGmPE6mgyZOrQuf1H-"
+                sitekey="6LdVxkUrAAAAABycqyZfCgTKOFdJ8gkaE0gqYX9w"
                 onChange={(value) => setRecaptchaToken(value)}
               />
             </Box>
 
-            <DialogActions sx={{ mt: 3, justifyContent: 'center' }}>
-              <Button
-                onClick={() => {
-                  formik.resetForm();
-                  setRecaptchaToken(null);
-                  setRegistroExitoso(false);
-                  onClose();
-                }}
-                sx={{ backgroundColor: '#f44336', color: '#fff', '&:hover': { backgroundColor: '#d32f2f' } }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                sx={{ backgroundColor: '#4CAF50', color: '#fff', '&:hover': { backgroundColor: '#388E3C' } }}
-              >
-                Regístrate gratis →
-              </Button>
+            <DialogActions sx={{ mt: 3, justifyContent: 'center', flexDirection: 'column' }}>
+              <Box display="flex" gap={2}>
+                <Button
+                  onClick={() => {
+                    formik.resetForm();
+                    setRecaptchaToken(null);
+                    setRegistroExitoso(false);
+                    setMostrarBotonPDF(false);
+                    onClose();
+                  }}
+                  sx={{ backgroundColor: '#f44336', color: '#fff', '&:hover': { backgroundColor: '#d32f2f' } }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  sx={{ backgroundColor: '#4CAF50', color: '#fff', '&:hover': { backgroundColor: '#388E3C' } }}
+                >
+                  Regístrate gratis →
+                </Button>
+              </Box>
+
+              {mostrarBotonPDF && (
+                <Box mt={2}>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={generarFormularioPDF}
+                    startIcon={<PrintIcon />}
+                  >
+                    Imprimir Formulario PDF
+                  </Button>
+                </Box>
+              )}
             </DialogActions>
           </form>
 
