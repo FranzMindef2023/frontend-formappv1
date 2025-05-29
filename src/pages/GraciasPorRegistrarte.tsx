@@ -201,7 +201,7 @@ const GraciasPorRegistrarte: React.FC = () => {
             }}
           >
             <iframe
-              src="https://www.youtube.com/embed/XdTT8zH-Wdg"
+              src="https://www.youtube.com/embed/JBxKJDUnkHQ"
               title="Video institucional"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -211,7 +211,7 @@ const GraciasPorRegistrarte: React.FC = () => {
                 top: 0,
                 left: 0,
                 width: '100%',
-                height: '100%'
+                height: '100%',
               }}
             />
           </Box>

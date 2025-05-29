@@ -27,19 +27,31 @@ declare module 'jspdf' {
     };
   }
 }
-
-export const generarFormularioPDF = (values: any) => {
+const getImageBase64FromUrl = async (url: string) => {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+};
+export const generarFormularioPDF = async(values: any) => {
+ const logoBase64 = await getImageBase64FromUrl('/siremil/minlogo.png');
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  // Agregar logo en la parte superior izquierda
+ doc.addImage(logoBase64, 'PNG', 10, 8, 70, 0); // 30 mm de ancho
+
 
   const fechaActual = new Date().toLocaleDateString();
   const horaActual = new Date().toLocaleTimeString();
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('MINISTERIO DE DEFENSA DE LAS FF.AA.', 45, 12);
+  // doc.text('MINISTERIO DE DEFENSA DE LAS FF.AA.', 45, 12);
   doc.setFontSize(13);
-  doc.text('FORMULARIO DE REGISTRO', 45, 18);
-  doc.text('DEL SERVICIO MILITAR', 45, 24);
+  doc.text('FORMULARIO DE REGISTRO', 45, 28);
+  doc.text('DEL SERVICIO MILITAR', 45, 34);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
@@ -50,12 +62,12 @@ export const generarFormularioPDF = (values: any) => {
   doc.text(`Reporte: RBenRegBeneficiario`, 145, 32);
 
   doc.setFont('helvetica', 'bold');
-  doc.text('Categoría', 14, 38);
-  doc.text('Sub Categoría:', 60, 38);
-  doc.text('N° de Beneficiario:', 140, 38);
+  // doc.text('Categoría', 14, 38);
+  // doc.text('Sub Categoría:', 60, 38);
+  doc.text('N° de Registro:', 140, 38);
   doc.setFont('helvetica', 'normal');
-  doc.text('PRIVADO', 34, 38);
-  doc.text('NATURAL', 94, 38);
+  // doc.text('PRIVADO', 34, 38);
+  // doc.text('NATURAL', 94, 38);
   doc.text('1189762', 177, 38);
 
   const sectionTitle = (title: string, offsetY = 3) => {
@@ -115,9 +127,9 @@ export const generarFormularioPDF = (values: any) => {
 
   sectionTitle('LUGAR DE PRESENTACIÓN A LA UNIDAD MILITAR');
   nextTable([[
-     values.departamento_residencia,
-    values.provincia_residencia,
-    `${values.unidad_militar_servicio}`,
+    values.departamento_presentacion,
+    values.provincia_presentacion,
+    `${values.unidad_presentacion}`,
     'BO',
     `${values.fecha_presentacion}`, `${values.hora_presentacion}`, 
   ]], ['Depto', 'Provincia', 'Unidad Militara', 'País', 'Fecha de Presentación', 'Hora']);
@@ -133,7 +145,7 @@ export const generarFormularioPDF = (values: any) => {
       c.fecha,
       c.verificacion,
       c.estado
-    ]) || [[values.departamento_presentacion, values.departamento_presentacion, values.unidad_presentacion, 'BOLIVIA', values.fecha_presentacion,values.hora_presentacion]],
+    ]) || [[values.departamento_servicio, values.provincia_servicio, values.unidad_militar_servicio, 'BOLIVIA', values.fecha_presentacion,values.hora_presentacion]],
     ['Depto', 'Provincia', 'Unidad Militar', 'País', 'Fecha de Presentación', 'Hora']
   );
 
@@ -231,8 +243,9 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
       .matches(/^[A-Za-z0-9\s\-#.,ºáéíóúÁÉÍÓÚñÑ]+$/, 'Solo se permiten letras, números y caracteres básicos'),
         }),
     onSubmit: async (values) => {
-      setIsSubmitting(true); // ✅ bloquea
+      
       if (!recaptchaToken) return setAlertOpen(true);
+      setIsSubmitting(true); // ✅ bloquea
       const response = await consultarDatosPersona({
         nombres: values.nombres,
         ci: values.ci,
@@ -260,9 +273,15 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
           direccion: residencia?.direccion || '',
           departamento_residencia: residencia?.departamento?.descubigeo || '',
           provincia_residencia: residencia?.lugar_residencia?.descubigeo || '',
-          unidad_presentacion: destino?.centro_reclutamiento?.descripcion || '',
-          departamento_presentacion: destino?.departamento_presenta?.descubigeo || '',
-          unidad_militar_servicio: asignacion?.centro_presentacion?.descripcion || '',
+
+          unidad_presentacion: asignacion?.centro_reclutamiento?.descripcion || '',
+          departamento_presentacion: asignacion?.centro_reclutamiento?.ubicacion?.descubigeo || '',
+          provincia_presentacion: asignacion?.centro_reclutamiento?.provincia?.descubigeo || '',
+
+          unidad_militar_servicio: asignacion?.descripcion || '',
+          departamento_servicio: asignacion?.ubicacion?.descubigeo || '',
+          provincia_servicio: asignacion?.provincia?.descubigeo || '',
+
           fecha_presentacion: asignacion?.fecha_presentacion || '',
           hora_presentacion: asignacion?.hora_presentacion || '',
         }
@@ -303,9 +322,15 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
           direccion: residencia?.direccion || '',
           departamento_residencia: residencia?.departamento?.descubigeo || '',
           provincia_residencia: residencia?.lugar_residencia?.descubigeo || '',
-          unidad_presentacion: destino?.centro_reclutamiento?.descripcion || '',
-          departamento_presentacion: destino?.departamento_presenta?.descubigeo || '',
-          unidad_militar_servicio: asignacion?.unidad_militar?.descripcion || '',
+
+          unidad_presentacion: asignacion?.centro_reclutamiento?.descripcion || '',
+          departamento_presentacion: asignacion?.centro_reclutamiento?.ubicacion?.descubigeo || '',
+          provincia_presentacion: asignacion?.centro_reclutamiento?.provincia?.descubigeo || '',
+
+          unidad_militar_servicio: asignacion?.descripcion || '',
+          departamento_servicio: asignacion?.ubicacion?.descubigeo || '',
+          provincia_servicio: asignacion?.provincia?.descubigeo || '',
+
           fecha_presentacion: asignacion?.fecha_presentacion || '',
           hora_presentacion: asignacion?.hora_presentacion || '',
         };
@@ -704,8 +729,8 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
 
             <Box mt={3} textAlign="center">
               <ReCAPTCHA
-                sitekey="6LeSXDcrAAAAAJjOS5EBBSKGmPE6mgyZOrQuf1H-"
-                // sitekey="6LdVxkUrAAAAABycqyZfCgTKOFdJ8gkaE0gqYX9w"
+                // sitekey="6LeSXDcrAAAAAJjOS5EBBSKGmPE6mgyZOrQuf1H-"
+                sitekey="6LdVxkUrAAAAABycqyZfCgTKOFdJ8gkaE0gqYX9w"
                 onChange={(value) => setRecaptchaToken(value)}
               />
             </Box>
