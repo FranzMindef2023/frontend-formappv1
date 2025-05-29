@@ -93,6 +93,20 @@ const Preinscritos: React.FC = () => {
       <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
         <Grid item xs={12} sm={6} md={3}>
           <FormControl fullWidth size="small">
+            <InputLabel>Fuerza</InputLabel>
+            <Select value={centro} onChange={(e) => setCentro(e.target.value)} label="Fuerza">
+              <MenuItem value="">Todos</MenuItem>
+              {centros.map((c, i) => (
+                <MenuItem key={i} value={c}>
+                  {c}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <FormControl fullWidth size="small">
             <InputLabel>Centro de Reclutamiento</InputLabel>
             <Select value={centro} onChange={(e) => setCentro(e.target.value)} label="Centro de Reclutamiento">
               <MenuItem value="">Todos</MenuItem>
