@@ -729,8 +729,8 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
 
             <Box mt={3} textAlign="center">
               <ReCAPTCHA
-                sitekey="6Lc8o04rAAAAAN1ifZFnQTh01JSfy3eH3kiC96Be"
-                // sitekey="6LdVxkUrAAAAABycqyZfCgTKOFdJ8gkaE0gqYX9w"
+                // sitekey="6Lc8o04rAAAAAN1ifZFnQTh01JSfy3eH3kiC96Be"
+                sitekey="6LdVxkUrAAAAABycqyZfCgTKOFdJ8gkaE0gqYX9w"
                 onChange={(value) => setRecaptchaToken(value)}
               />
             </Box>

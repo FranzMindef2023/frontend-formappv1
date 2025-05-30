@@ -33,7 +33,7 @@ import {
 import {
   getCentrosdeReclutamientos,
   getUnidadesMilitares,
-  getPersonasFiltradas
+  getListasUnidadesMilitares
 } from '../services/filtros';
 
 const centros = ['Centro A', 'Centro B'];
@@ -45,7 +45,7 @@ const datosPreinscritos = [
   { nombre: 'Luis Gómez', ci: '11223344', centro: 'Centro A', unidad: 'Unidad 2' },
 ];
 
-const Preinscritos: React.FC = () => {
+const Resumen: React.FC = () => {
   const [centro, setCentro] = useState('');
   const [unidad, setUnidad] = useState('');
   const [busqueda, setBusqueda] = useState('');
@@ -57,40 +57,20 @@ const Preinscritos: React.FC = () => {
   const [centros, setCentros] = useState<{ id: number; descripcion: string }[]>([]);
   const [centroSeleccionado, setCentroSeleccionado] = useState('');
 
-  const [unidades, setUnidades] = useState<{ id: number; descripcion: string }[]>([]);
-  const [unidadSeleccionada, setUnidadSeleccionada] = useState('');
+  // const [unidades, setUnidades] = useState<{ id: number; descripcion: string }[]>([]);
+  // const [unidadSeleccionada, setUnidadSeleccionada] = useState('');
 
 
 
   // FILTRO por centro y unidad al presionar el botón
-  const aplicarFiltros = async () => {
-  try {
-    const unidad = unidades.find(u => u.descripcion === unidadSeleccionada);
-    const centro = centros.find(c => c.descripcion === centroSeleccionado);
-
-    const params: any = {};
-    if (fuerzaSeleccionada) params.id_fuerza = parseInt(fuerzaSeleccionada);
-    if (centro) params.id_centro_reclutamiento = centro.id;
-    if (unidad) params.id_unidad_militar = unidad.id;
-
-    const res = await getPersonasFiltradas(params);
-    if (res.data.status) {
-      const personas = res.data.data.map((p: any) => ({
-        nombre: `${p.nombres} ${p.primer_apellido} ${p.segundo_apellido ?? ''}`,
-        ci: p.ci,
-        centro: centroSeleccionado,
-        unidad: unidadSeleccionada,
-      }));
-      setResultadoBase(personas);
-    } else {
-      setResultadoBase([]);
-    }
-  } catch (error) {
-    console.error('Error al aplicar filtros:', error);
-    setResultadoBase([]);
-  }
-};
-
+  const aplicarFiltros = () => {
+    const resultado = datosPreinscritos.filter((p) => {
+      const coincideCentro = !centro || p.centro === centro;
+      const coincideUnidad = !unidad || p.unidad === unidad;
+      return coincideCentro && coincideUnidad;
+    });
+    setResultadoBase(resultado);
+  };
   useEffect(() => {
   getFuerzas()
     .then(res => {
@@ -108,7 +88,7 @@ const Preinscritos: React.FC = () => {
 
 useEffect(() => {
   if (fuerzaSeleccionada) {
-    getCentrosdeReclutamientos({ id_fuerza: parseInt(fuerzaSeleccionada) })
+    getListasUnidadesMilitares({ id_fuerza: parseInt(fuerzaSeleccionada) })
       .then(res => {
         if (res.data.status) {
           setCentros(res.data.data);
@@ -125,26 +105,27 @@ useEffect(() => {
     setCentroSeleccionado('');
   }
 }, [fuerzaSeleccionada]);
-useEffect(() => {
-  const centro = centros.find(c => c.descripcion === centroSeleccionado);
-  if (centro) {
-    getUnidadesMilitares({ id_centro_reclutamiento: centro.id })
-      .then(res => {
-        if (res.data.status) {
-          setUnidades(res.data.data);
-        } else {
-          setUnidades([]);
-        }
-      })
-      .catch(err => {
-        console.error('Error al cargar unidades militares:', err);
-        setUnidades([]);
-      });
-  } else {
-    setUnidades([]);
-    setUnidadSeleccionada('');
-  }
-}, [centroSeleccionado]);
+
+// useEffect(() => {
+//   const centro = centros.find(c => c.descripcion === centroSeleccionado);
+//   if (centro) {
+//     getUnidadesMilitares({ id_centro_reclutamiento: centro.id })
+//       .then(res => {
+//         if (res.data.status) {
+//           setUnidades(res.data.data);
+//         } else {
+//           setUnidades([]);
+//         }
+//       })
+//       .catch(err => {
+//         console.error('Error al cargar unidades militares:', err);
+//         setUnidades([]);
+//       });
+//   } else {
+//     setUnidades([]);
+//     setUnidadSeleccionada('');
+//   }
+// }, [centroSeleccionado]);
 
 
   // BUSQUEDA sobre los resultados filtrados
@@ -181,7 +162,7 @@ useEffect(() => {
   return (
     <Box sx={{ p: 4 }}>
       <Typography variant="h4" gutterBottom>
-        Preinscritos
+        Resumen de Preinscritos
       </Typography>
 
       {/* FILTROS */}
@@ -224,7 +205,7 @@ useEffect(() => {
         </Grid>
 
 
-        <Grid item xs={12} sm={6} md={3}>
+        {/* <Grid item xs={12} sm={6} md={3}>
           <FormControl fullWidth size="small">
             <InputLabel>Unidad Militar Destinada</InputLabel>
             <Select
@@ -240,7 +221,7 @@ useEffect(() => {
               ))}
             </Select>
           </FormControl>
-        </Grid>
+        </Grid> */}
 
 
         <Grid item xs={12} sm={12} md={2}>
@@ -334,4 +315,4 @@ useEffect(() => {
   );
 };
 
-export default Preinscritos;
+export default Resumen;

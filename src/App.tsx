@@ -11,6 +11,7 @@ import PrivateLayout from './layouts/PrivateLayout';
 import GraciasPorRegistrarte from './pages/GraciasPorRegistrarte';
 import GraciasPorConsultar from './pages/GraciasPorConsultar';
 import Preinscritos from './pages/Preinscritos';
+import Resumen from './pages/Resumen';
 
 const App: React.FC = () => {
   return (
@@ -45,6 +46,16 @@ const App: React.FC = () => {
             <PrivateRoute>
               <PrivateLayout>
                 <Preinscritos />
+              </PrivateLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/Resumen"
+          element={
+            <PrivateRoute>
+              <PrivateLayout>
+                <Resumen />
               </PrivateLayout>
             </PrivateRoute>
           }
