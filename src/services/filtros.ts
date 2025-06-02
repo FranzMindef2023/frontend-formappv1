@@ -33,3 +33,10 @@ export const getPersonasFiltradas = (params: {
 }) => {
   return client.get('/personas/filtrar', { params });
 };
+
+//nuevo api 
+export const getRelacionNominal = (params: {
+  id_centro_reclutamiento: number;
+}) => {
+  return client.get(`/relacion-nominal/${params.id_centro_reclutamiento}`);
+};

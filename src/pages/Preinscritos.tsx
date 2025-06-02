@@ -16,7 +16,7 @@ import {
   TableBody,
   TextField,
   Tooltip,
-  InputAdornment
+  InputAdornment,
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
@@ -36,123 +36,97 @@ import {
   getPersonasFiltradas
 } from '../services/filtros';
 
-const centros = ['Centro A', 'Centro B'];
-const unidades = ['Unidad 1', 'Unidad 2'];
-
-const datosPreinscritos = [
-  { nombre: 'Juan Pérez', ci: '12345678', centro: 'Centro A', unidad: 'Unidad 1' },
-  { nombre: 'Ana López', ci: '87654321', centro: 'Centro B', unidad: 'Unidad 2' },
-  { nombre: 'Luis Gómez', ci: '11223344', centro: 'Centro A', unidad: 'Unidad 2' },
-];
-
 const Preinscritos: React.FC = () => {
-  const [centro, setCentro] = useState('');
-  const [unidad, setUnidad] = useState('');
   const [busqueda, setBusqueda] = useState('');
-  const [resultadoBase, setResultadoBase] = useState<any[]>([]); // Resultado de filtros
-  const [filtrados, setFiltrados] = useState<any[]>([]); // Resultado final tras búsqueda
+  const [resultadoBase, setResultadoBase] = useState<any[]>([]);
+  const [filtrados, setFiltrados] = useState<any[]>([]);
 
   const [fuerzas, setFuerzas] = useState<{ id: number; nombre: string }[]>([]);
   const [fuerzaSeleccionada, setFuerzaSeleccionada] = useState('');
   const [centros, setCentros] = useState<{ id: number; descripcion: string }[]>([]);
   const [centroSeleccionado, setCentroSeleccionado] = useState('');
-
   const [unidades, setUnidades] = useState<{ id: number; descripcion: string }[]>([]);
   const [unidadSeleccionada, setUnidadSeleccionada] = useState('');
 
+  const calcularEdad = (fecha: string) => {
+    const nacimiento = new Date(fecha);
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    const m = hoy.getMonth() - nacimiento.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
+      edad--;
+    }
+    return edad;
+  };
 
-
-  // FILTRO por centro y unidad al presionar el botón
   const aplicarFiltros = async () => {
-  try {
-    const unidad = unidades.find(u => u.descripcion === unidadSeleccionada);
-    const centro = centros.find(c => c.descripcion === centroSeleccionado);
+    try {
+      const unidad = unidades.find(u => u.descripcion === unidadSeleccionada);
+      const centro = centros.find(c => c.descripcion === centroSeleccionado);
 
-    const params: any = {};
-    if (fuerzaSeleccionada) params.id_fuerza = parseInt(fuerzaSeleccionada);
-    if (centro) params.id_centro_reclutamiento = centro.id;
-    if (unidad) params.id_unidad_militar = unidad.id;
+      const params: any = {};
+      if (fuerzaSeleccionada) params.id_fuerza = parseInt(fuerzaSeleccionada);
+      if (centro) params.id_centro_reclutamiento = centro.id;
+      if (unidad) params.id_unidad_militar = unidad.id;
 
-    const res = await getPersonasFiltradas(params);
-    if (res.data.status) {
-      const personas = res.data.data.map((p: any) => ({
-        nombre: `${p.nombres} ${p.primer_apellido} ${p.segundo_apellido ?? ''}`,
-        ci: p.ci,
-        centro: centroSeleccionado,
-        unidad: unidadSeleccionada,
-      }));
-      setResultadoBase(personas);
-    } else {
+      const res = await getPersonasFiltradas(params);
+      if (res.data.status) {
+        setResultadoBase(res.data.data);
+      } else {
+        setResultadoBase([]);
+      }
+    } catch (error) {
+      console.error('Error al aplicar filtros:', error);
       setResultadoBase([]);
     }
-  } catch (error) {
-    console.error('Error al aplicar filtros:', error);
-    setResultadoBase([]);
-  }
-};
+  };
 
   useEffect(() => {
-  getFuerzas()
-    .then(res => {
-      if (res.data.status) {
-        setFuerzas(res.data.data);
-      } else {
-        setFuerzas([]);
-      }
-    })
-    .catch(err => {
-      console.error('Error al cargar fuerzas:', err);
-      setFuerzas([]);
-    });
-}, []);
-
-useEffect(() => {
-  if (fuerzaSeleccionada) {
-    getCentrosdeReclutamientos({ id_fuerza: parseInt(fuerzaSeleccionada) })
+    getFuerzas()
       .then(res => {
         if (res.data.status) {
-          setCentros(res.data.data);
-        } else {
-          setCentros([]);
+          setFuerzas(res.data.data);
         }
       })
-      .catch(err => {
-        console.error('Error al cargar centros de reclutamiento:', err);
-        setCentros([]);
-      });
-  } else {
-    setCentros([]);
-    setCentroSeleccionado('');
-  }
-}, [fuerzaSeleccionada]);
-useEffect(() => {
-  const centro = centros.find(c => c.descripcion === centroSeleccionado);
-  if (centro) {
-    getUnidadesMilitares({ id_centro_reclutamiento: centro.id })
-      .then(res => {
-        if (res.data.status) {
-          setUnidades(res.data.data);
-        } else {
-          setUnidades([]);
-        }
-      })
-      .catch(err => {
-        console.error('Error al cargar unidades militares:', err);
-        setUnidades([]);
-      });
-  } else {
-    setUnidades([]);
-    setUnidadSeleccionada('');
-  }
-}, [centroSeleccionado]);
+      .catch(console.error);
+  }, []);
 
+  useEffect(() => {
+    if (fuerzaSeleccionada) {
+      getCentrosdeReclutamientos({ id_fuerza: parseInt(fuerzaSeleccionada) })
+        .then(res => {
+          if (res.data.status) {
+            setCentros(res.data.data);
+          }
+        })
+        .catch(console.error);
+    } else {
+      setCentros([]);
+      setCentroSeleccionado('');
+    }
+  }, [fuerzaSeleccionada]);
 
-  // BUSQUEDA sobre los resultados filtrados
+  useEffect(() => {
+    const centro = centros.find(c => c.descripcion === centroSeleccionado);
+    if (centro) {
+      getUnidadesMilitares({ id_centro_reclutamiento: centro.id })
+        .then(res => {
+          if (res.data.status) {
+            setUnidades(res.data.data);
+          }
+        })
+        .catch(console.error);
+    } else {
+      setUnidades([]);
+      setUnidadSeleccionada('');
+    }
+  }, [centroSeleccionado]);
+
   useEffect(() => {
     const resultadoFiltrado = resultadoBase.filter((p) => {
       return (
         !busqueda ||
-        p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+        `${p.nombres} ${p.primer_apellido} ${p.segundo_apellido}`.toLowerCase().includes(busqueda.toLowerCase()) ||
         p.ci.includes(busqueda)
       );
     });
@@ -160,22 +134,26 @@ useEffect(() => {
   }, [busqueda, resultadoBase]);
 
   const exportarPDF = () => {
-  const doc = new jsPDF();
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text('Reporte de Preinscritos', 14, 20);
 
-  doc.setFontSize(14);
-  doc.text('Reporte de Preinscritos', 14, 20);
+    autoTable(doc, {
+      startY: 30,
+      head: [['Nombre Completo', 'CI', 'Complemento CI', 'Expedido', 'Fecha Nacimiento', 'Edad', 'Celular', 'Nacionalidad']],
+      body: filtrados.map(p => [
+        `${p.nombres} ${p.primer_apellido} ${p.segundo_apellido || ''}`,
+        p.ci,
+        p.complemento_ci || '',
+        p.expedido,
+        new Date(p.fecha_nacimiento).toLocaleDateString(),
+        calcularEdad(p.fecha_nacimiento),
+        p.celular,
+        p.nacionalidad,
+      ]),
+    });
 
-  autoTable(doc, {
-    startY: 30,
-    head: [['Nombre', 'CI', 'Centro', 'Unidad']],
-    body: filtrados.map(p => [p.nombre, p.ci, p.centro, p.unidad]),
-  });
-
-  doc.save('reporte-preinscritos.pdf');
-};
-
-  const exportarExcel = () => {
-    alert('Aquí se exportaría a Excel');
+    doc.save('preinscritos.pdf');
   };
 
   return (
@@ -184,7 +162,6 @@ useEffect(() => {
         Preinscritos
       </Typography>
 
-      {/* FILTROS */}
       <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
         <Grid item xs={12} sm={6} md={3}>
           <FormControl fullWidth size="small">
@@ -202,7 +179,6 @@ useEffect(() => {
               ))}
             </Select>
           </FormControl>
-
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
@@ -223,7 +199,6 @@ useEffect(() => {
           </FormControl>
         </Grid>
 
-
         <Grid item xs={12} sm={6} md={3}>
           <FormControl fullWidth size="small">
             <InputLabel>Unidad Militar Destinada</InputLabel>
@@ -242,7 +217,6 @@ useEffect(() => {
           </FormControl>
         </Grid>
 
-
         <Grid item xs={12} sm={12} md={2}>
           <Button
             variant="contained"
@@ -256,7 +230,6 @@ useEffect(() => {
         </Grid>
       </Grid>
 
-      {/* BUSQUEDA + EXPORTACIONES */}
       <Grid container spacing={2} alignItems="center" justifyContent="flex-end" sx={{ mb: 2 }}>
         <Grid item xs={12} md={4}>
           <TextField
@@ -286,37 +259,46 @@ useEffect(() => {
 
         <Grid item>
           <Tooltip title="Descargar Excel">
-            <Button variant="outlined" color="success" onClick={exportarExcel} startIcon={<FileDownloadIcon />}>
+            <Button variant="outlined" color="success" onClick={() => alert('Exportar a Excel')} startIcon={<FileDownloadIcon />}>
               Excel
             </Button>
           </Tooltip>
         </Grid>
       </Grid>
 
-      {/* TABLA */}
       <Paper elevation={2}>
         <Table size="small">
           <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
             <TableRow>
-              <TableCell><strong>Nombre</strong></TableCell>
+              <TableCell><strong>#</strong></TableCell>
+              <TableCell><strong>Nombre Completo</strong></TableCell>
               <TableCell><strong>CI</strong></TableCell>
-              <TableCell><strong>Centro</strong></TableCell>
-              <TableCell><strong>Unidad</strong></TableCell>
+              <TableCell><strong>Complemento CI</strong></TableCell>
+              <TableCell><strong>Expedido</strong></TableCell>
+              <TableCell><strong>Fecha de Nacimiento</strong></TableCell>
+              <TableCell><strong>Edad</strong></TableCell>
+              <TableCell><strong>Celular</strong></TableCell>
+              <TableCell><strong>Nacionalidad</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filtrados.length > 0 ? (
               filtrados.map((p, index) => (
-                <TableRow key={index} hover sx={{ '&:nth-of-type(even)': { backgroundColor: '#fafafa' } }}>
-                  <TableCell>{p.nombre}</TableCell>
+                <TableRow key={index} hover>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{`${p.nombres} ${p.primer_apellido} ${p.segundo_apellido || ''}`}</TableCell>
                   <TableCell>{p.ci}</TableCell>
-                  <TableCell>{p.centro}</TableCell>
-                  <TableCell>{p.unidad}</TableCell>
+                  <TableCell>{p.complemento_ci || ''}</TableCell>
+                  <TableCell>{p.expedido}</TableCell>
+                  <TableCell>{new Date(p.fecha_nacimiento).toLocaleDateString()}</TableCell>
+                  <TableCell>{calcularEdad(p.fecha_nacimiento)}</TableCell>
+                  <TableCell>{p.celular}</TableCell>
+                  <TableCell>{p.nacionalidad}</TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={9} align="center">
                   No hay resultados. Aplica filtros o realiza una búsqueda.
                 </TableCell>
               </TableRow>
