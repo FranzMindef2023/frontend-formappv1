@@ -79,9 +79,9 @@ const Headerweb: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </IconButton>
 
           <img
-            src="https://www.mindef.gob.bo/sites/default/files/minlogo.png"
+            src="/siremil/logosire.png"
             alt="Ministerio de Defensa"
-            style={{ height: 50 }}
+            style={{ height: 100 }}
           />
         </Box>
 
@@ -91,13 +91,21 @@ const Headerweb: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             variant="contained"
             size="small"
             onClick={() => setOpenModal(true)}
+            color="success"
             sx={{
-              backgroundColor: '#F4511E',
               borderRadius: 9999,
               fontWeight: 'bold',
               textTransform: 'none',
               px: 3,
-              '&:hover': { backgroundColor: '#e64a19' }
+              backgroundColor: '#43a047', // verde éxito
+              color: '#fff',
+              boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+              transition: 'all 0.3s ease-in-out',
+              '&:hover': {
+                backgroundColor: '#2e7d32',
+                transform: 'scale(1.05)',
+                boxShadow: '0 6px 14px rgba(0,0,0,0.3)'
+              }
             }}
             startIcon={<TouchAppIcon />}
           >
@@ -112,7 +120,7 @@ const Headerweb: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </Box>
 
         {/* Menú del usuario */}
-        <Menu
+        {/* <Menu
           anchorEl={anchorEl}
           open={open}
           onClose={handleMenuClose}
@@ -216,7 +224,7 @@ const Headerweb: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             <ListItemIcon><Logout sx={{ color: '#fafafa' }} /></ListItemIcon>
             Salir
           </MenuItem>
-        </Menu>
+        </Menu> */}
       </Toolbar>
       <ModalPreRegistro open={openModal} onClose={() => setOpenModal(false)} />
     </AppBar>

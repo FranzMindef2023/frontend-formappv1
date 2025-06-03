@@ -25,6 +25,7 @@ import SearchIcon from '@mui/icons-material/Search';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import Cookies from 'js-cookie';
 
 import { getFuerzas } from '../services/fuerzas';
 import {
@@ -32,6 +33,7 @@ import {
   getListasUnidadesMilitares,
   getRelacionNominal
 } from '../services/filtros';
+
 
 const Resumen: React.FC = () => {
   const [fuerzas, setFuerzas] = useState<{ id: number; nombre: string }[]>([]);
@@ -42,6 +44,26 @@ const Resumen: React.FC = () => {
   const [resultadoBase, setResultadoBase] = useState<any[]>([]);
   const [filtrados, setFiltrados] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState('');
+
+  const calcularEdad = (fechaNacimiento: string): number => {
+    const hoy = new Date();
+    const nacimiento = new Date(fechaNacimiento);
+    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    const m = hoy.getMonth() - nacimiento.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
+      edad--;
+    }
+    return edad;
+  };
+  const getImageBase64FromUrl = async (url: string) => {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  };
 
   useEffect(() => {
     getFuerzas()
@@ -117,28 +139,71 @@ const Resumen: React.FC = () => {
       const personas = res.data.data.relacion_nominal;
 
       const doc = new jsPDF();
+      const logoBase64 = await getImageBase64FromUrl('/siremil/minlogo.png');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
 
-      // Información alineada a la izquierda
-      doc.setFontSize(12);
-      doc.text(`Unidad Militar: ${unidad.unidad_militar}`, 14, 20);
-      doc.text(`Gestión: ${unidad.gestion}`, 14, 27);
-      doc.text(`Cantidad Registrados: ${unidad.cantidad_registrados}`, 14, 34);
+      // Obtener nombre del usuario desde la cookie
+      const cookieUser = Cookies.get('user');
+      let usuarioNombre = '';
+      if (cookieUser) {
+        try {
+          const usuario = JSON.parse(cookieUser);
+          usuarioNombre = `${usuario.nombres || ''} ${usuario.appaterno || ''} ${usuario.apmaterno || ''}`;
+        } catch (e) {
+          console.error("Error al parsear la cookie de usuario:", e);
+        }
+      }
 
-      // Tabla
-      const filas = personas.map((p: any) => [
-        `${p.nombres} ${p.primer_apellido} ${p.segundo_apellido}`,
-        `${p.ci}${p.complemento_ci ? '-' + p.complemento_ci : ''}`,
-        p.expedido,
-        p.fecha_nacimiento
-      ]);
+      const fechaActual = new Date().toLocaleString();
 
       autoTable(doc, {
-        startY: 40,
-        head: [['Nombre Completo', 'CI', 'Expedido', 'Fecha de Nacimiento']],
-        body: filas,
+        startY: 42,
+        head: [['N°', 'Nombres', 'P. Apellido', 'S. Apellido', 'CI', 'Compl.', 'Expedido', 'Fecha Nac.', 'Edad']],
+        body: personas.map((p: any, i: number) => [
+          i + 1,
+          p.nombres,
+          p.primer_apellido,
+          p.segundo_apellido || '',
+          p.ci,
+          p.complemento_ci || '',
+          p.expedido,
+          new Date(p.fecha_nacimiento).toLocaleDateString(),
+          calcularEdad(p.fecha_nacimiento),
+        ]),
+        didDrawPage: function () {
+          // Título
+        doc.setFontSize(14);
+        doc.text('Relacion Nominal de los Pre-Inscritos', 50, 35);
+          // Logo
+          doc.addImage(logoBase64, 'PNG', 10, 8, 70, 0);
+
+          // Datos alineados a la derecha
+          doc.setFontSize(12);
+          const textoUM = `Unidad Militar: ${unidad.unidad_militar}`;
+          const textoGestion = `Gestión: ${unidad.gestion}`;
+          const textoCantidad = `Cantidad Registrados: ${unidad.cantidad_registrados}`;
+
+          doc.text(textoUM, pageWidth - doc.getTextWidth(textoUM) - 14, 20);
+          doc.text(textoGestion, pageWidth - doc.getTextWidth(textoGestion) - 14, 27);
+          doc.text(textoCantidad, pageWidth - doc.getTextWidth(textoCantidad) - 14, 34);
+
+          // Pie de página: fecha, usuario y número de página
+          doc.setFontSize(10);
+          const textoFecha = `Fecha: ${fechaActual}`;
+          const textoUsuario = `Usuario: ${usuarioNombre}`;
+          const paginaActual = (doc as any).internal.getCurrentPageInfo().pageNumber;
+          const totalPaginas = (doc as any).internal.getNumberOfPages();
+          const textoPagina = `Página ${paginaActual} de ${totalPaginas}`;
+
+          doc.text(textoFecha, 14, pageHeight - 12);
+          doc.text(textoUsuario, 14, pageHeight - 6);
+          doc.text(textoPagina, pageWidth - doc.getTextWidth(textoPagina) - 14, pageHeight - 6);
+        }
       });
 
-      doc.save(`RelacionNominal_${unidad.unidad_militar.replace(/\s+/g, '_')}.pdf`);
+      const nombrePDF = `RelacionNominal_${unidad.unidad_militar.replace(/\s+/g, '_')}.pdf`;
+      doc.save(nombrePDF);
     } catch (error) {
       console.error('Error al generar PDF:', error);
       alert('Error al generar el PDF.');

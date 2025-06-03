@@ -92,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onClose }) => {
       <Divider sx={{ backgroundColor: '#333' }} />
 
       <Box textAlign="center" py={2} fontSize={12} color="#777">
-        Powered by <span style={{ color: 'gray' }}>hotmart</span>
+        DGAA-<span style={{ color: 'gray' }}>USI</span>
       </Box>
     </Box>
   );

@@ -25,6 +25,7 @@ import SearchIcon from '@mui/icons-material/Search';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import Cookies from 'js-cookie';
 
 import {
   getFuerzas
@@ -57,6 +58,15 @@ const Preinscritos: React.FC = () => {
       edad--;
     }
     return edad;
+  };
+  const getImageBase64FromUrl = async (url: string) => {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
   };
 
   const aplicarFiltros = async () => {
@@ -133,28 +143,81 @@ const Preinscritos: React.FC = () => {
     setFiltrados(resultadoFiltrado);
   }, [busqueda, resultadoBase]);
 
-  const exportarPDF = () => {
+ const exportarPDF = async () => {
     const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text('Reporte de Preinscritos', 14, 20);
+    const logoBase64 = await getImageBase64FromUrl('/siremil/minlogo.png');
 
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Obtener usuario desde cookie
+    const cookieUser = Cookies.get('user');
+    let usuarioNombre = '';
+    if (cookieUser) {
+      try {
+        const usuario = JSON.parse(cookieUser);
+        usuarioNombre = `${usuario.nombres || ''} ${usuario.appaterno || ''} ${usuario.apmaterno || ''}`;
+      } catch (e) {
+        console.error("Error al parsear la cookie de usuario:", e);
+      }
+    }
+
+    // Fecha actual
+    const fechaActual = new Date().toLocaleString();
+
+    // Generar tabla con encabezado, logo, título y pie
     autoTable(doc, {
-      startY: 30,
-      head: [['Nombre Completo', 'CI', 'Complemento CI', 'Expedido', 'Fecha Nacimiento', 'Edad', 'Celular', 'Nacionalidad']],
-      body: filtrados.map(p => [
-        `${p.nombres} ${p.primer_apellido} ${p.segundo_apellido || ''}`,
+      startY: 45,
+      head: [['N°', 'Nombres', 'P. Apellido', 'S. Apellido', 'CI', 'Expedido', 'Fecha Nacimiento', 'Edad', 'Celular', 'Nacionalidad']],
+      body: filtrados.map((p, i) => [
+        i + 1,
+        p.nombres,
+        p.primer_apellido,
+        p.segundo_apellido || '',
         p.ci,
-        p.complemento_ci || '',
         p.expedido,
         new Date(p.fecha_nacimiento).toLocaleDateString(),
         calcularEdad(p.fecha_nacimiento),
         p.celular,
         p.nacionalidad,
       ]),
+      didDrawPage: function () {
+        // Logo institucional
+        doc.addImage(logoBase64, 'PNG', 10, 8, 70, 0);
+
+        // Título
+        doc.setFontSize(14);
+        doc.text('Relacion Nominal de los Pre-Inscritos', 50, 35);
+
+        // Fecha y usuario en encabezado superior derecho
+        doc.setFontSize(10);
+        // const textoFecha = `Fecha de impresión: ${fechaActual}`;
+        // const textoUsuario = `Usuario que imprime: ${usuarioNombre}`;
+        // doc.text(textoFecha, pageWidth - doc.getTextWidth(textoFecha) - 14, 28);
+        // doc.text(textoUsuario, pageWidth - doc.getTextWidth(textoUsuario) - 14, 33);
+
+        // Pie de página en todas las hojas
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
+        const textoPiePagina = `Página ${currentPage} de ${pageCount}`;
+        doc.text(textoPiePagina, pageWidth - doc.getTextWidth(textoPiePagina) - 14, pageHeight - 10);
+
+        // Repetir también fecha y usuario en el pie si deseas
+        doc.setFontSize(8);
+        doc.text(`Fecha: ${fechaActual}`, 14, pageHeight - 10);
+        doc.text(`Usuario: ${usuarioNombre}`, 14, pageHeight - 5);
+      }
     });
 
     doc.save('preinscritos.pdf');
   };
+
+
+
+
+
+
+
 
   return (
     <Box sx={{ p: 4 }}>

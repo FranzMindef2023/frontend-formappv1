@@ -81,7 +81,7 @@ const Login: React.FC = () => {
       if (!captcha) return alert('Completa el reCAPTCHA');
       try {
         const response = await loginService(values.email, values.password, captcha);
-        const token = response.data.token;
+        const token = response.data.access_token;
         const user = response.data.user || response.data.post;
         Cookies.set('token', token, { expires: 7 });
         Cookies.set('user', JSON.stringify(user));
@@ -101,17 +101,27 @@ const Login: React.FC = () => {
     <Background>
       <LoginBox>
         <Container maxWidth="xs">
-          <Box display="flex" justifyContent="center" mb={2}>
-            <img src="https://cdn-icons-png.flaticon.com/512/5977/5977575.png" alt="Logo" width="40" />
+          <Box display="flex" justifyContent="center" mb={3}>
+            <img
+              src="/siremil/logosire.png"
+              alt="Logo SIREMIL"
+              style={{
+                height: '300px', // aumenta la altura
+                maxWidth: '80%', // asegura que no se desborde en móviles
+                objectFit: 'contain'
+              }}
+            />
           </Box>
 
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            PRE REGISTRO DE ESPECIALIDAD
-          </Typography>
 
           <Typography variant="body2" mb={3}>
-            Inicia sesión con tu cuenta social o escribe tu información abajo.
+            Inicia sesión con tu usuario y contraseña institucional para acceder al sistema de registro militar.
           </Typography>
+          {/* <Typography variant="h6" fontWeight="bold" gutterBottom>
+            SIREMIL
+          </Typography> */}
+
+          
 
           <Box display="flex" gap={2} mb={3} flexWrap="wrap" justifyContent="center">
             <SocialButton startIcon={<img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" width="18" />}>Facebook</SocialButton>
@@ -198,15 +208,23 @@ const Login: React.FC = () => {
             </Button>
           </form>
 
-          <Box mt={6} textAlign="center" fontSize="12px" color="#777">
-            <Divider sx={{ backgroundColor: '#333', my: 2 }} />
-            <Typography variant="caption" display="block">
-              Soporte — Términos de Uso — Política de Privacidad
-            </Typography>
-            <Typography variant="caption" display="block">
-              Desarrollado por <strong>Unidad de Sistemas e Informatica Ministerio de Defensa</strong>
-            </Typography>
-          </Box>
+    <Box mt={6} textAlign="center" fontSize="12px" color="#777">
+      <Divider sx={{ backgroundColor: '#333', my: 2 }} />
+      
+      {/* Logo institucional */}
+      <Box mb={1}>
+        <img src="/siremil/minlogo.png" alt="Logo Ministerio de Defensa" style={{ height: 60 }} />
+      </Box>
+
+      <Typography variant="caption" display="block">
+        Soporte — Términos de Uso — Política de Privacidad
+      </Typography>
+      <Typography variant="caption" display="block">
+        Desarrollado por <strong>Unidad de Sistemas e Informática Ministerio de Defensa</strong>
+      </Typography>
+    </Box>
+
+
         </Container>
       </LoginBox>
       <ImageSide />

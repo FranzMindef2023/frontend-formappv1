@@ -1,22 +1,20 @@
-import React,{useState} from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
   Button,
   Container,
-  Grid,
-  IconButton
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import YouTubeIcon from '@mui/icons-material/YouTube';
-import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import Carousel from 'react-material-ui-carousel';
 import ModalPreRegistro from '../components/ModalPreRegistro';
 import TikTokIcon from '../components/icons/TikTokIcon';
 import Headerweb from '../components/Headerweb';
 import TouchAppIcon from '@mui/icons-material/TouchApp';
-
 
 const slides = [
   {
@@ -41,102 +39,56 @@ const slides = [
 
 const GraciasPorRegistrarte: React.FC = () => {
   const navigate = useNavigate();
-  const [openModal, setOpenModal] = React.useState(false);
+  const [openModal, setOpenModal] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
   const handleToggleSidebar = () => {
     setMobileOpen(!mobileOpen);
   };
 
-
   return (
     <Box sx={{ backgroundColor: '#191c1f', color: '#FAFBFC', minHeight: '100vh', pt: 4 }}>
       <Headerweb onToggleSidebar={handleToggleSidebar} />
-      {/* Separador visual */}
+
       <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
+       <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
+       <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
+
       <Container maxWidth="md">
         <Box textAlign="center" mb={4}>
-          {/* <img
-            src="https://www.mindef.gob.bo/sites/default/files/minlogo.png"
-            alt="Ministerio de Defensa"
-            style={{ maxWidth: 220, marginBottom: 20 }}
-          /> */}
           <Typography variant="h4" fontWeight="bold" color="#F4511E" gutterBottom>
-            Pre Registro Servicio Militar Obligatorio
+            ¡Inscríbete al Servicio Militar y forma parte del cambio!
           </Typography>
           <Typography variant="body1" sx={{ mb: 3 }}>
-            Tus datos han sido enviados correctamente. Te contactaremos si eres seleccionado para continuar con el proceso.
+            Demuestra tu compromiso, tu fuerza y tu amor por Bolivia. El Servicio Militar no es solo una obligación, es una oportunidad de crecer, servir y dejar huella en la historia.
+            <br /><br />
+            ⚔️ <strong>Desarrolla disciplina, liderazgo y orgullo patriótico</strong><br />
+            🇧🇴  <strong>Forma parte de la nueva generación que defiende la nación</strong><br />
+            🌟 <strong>Vive una experiencia única, transformadora y honorable</strong>
           </Typography>
-          {/* <Button
-            variant="contained"
-            onClick={() => navigate('/')}
-            sx={{
-              backgroundColor: '#F4511E',
-              borderRadius: 9999,
-              px: 4,
-              py: 1.5,
-              fontWeight: 'bold',
-              '&:hover': { backgroundColor: '#e64a19' }
-            }}
-          >
-            Volver al inicio
-          </Button> */}
         </Box>
 
-        <Carousel
-          autoPlay
-          animation="fade"
-          indicators={false}
-          navButtonsAlwaysInvisible
-          interval={4000}
-        >
+        <Carousel autoPlay animation="fade" indicators={false} navButtonsAlwaysInvisible interval={4000}>
           {slides.map((slide, index) => (
             <Box
               key={index}
-              sx={{
-                height: { xs: 240, sm: 340 },
-                position: 'relative',
-                borderRadius: 3,
-                mb: 4,
-                overflow: 'hidden',
-                backgroundImage: `url(${slide.image})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
+              sx={{ height: { xs: 240, sm: 340 }, position: 'relative', borderRadius: 3, mb: 4, overflow: 'hidden', backgroundImage: `url(${slide.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
             >
               <Box
-                sx={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.4))',
-                  color: '#fff',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                  p: 3
-                }}
+                sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.4))', color: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', p: 3 }}
               >
-                <Typography variant="h5" fontWeight="bold" gutterBottom>
-                  {slide.title}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  {slide.subtitle}
-                </Typography>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>{slide.title}</Typography>
+                <Typography variant="body1" gutterBottom>{slide.subtitle}</Typography>
                 <Button
                   variant="contained"
                   size="small"
-                  sx={{
-                    alignSelf: 'flex-start',
-                    backgroundColor: '#F4511E',
-                    fontWeight: 'bold',
-                    borderRadius: 9999,
-                    px: 3,
-                    '&:hover': { backgroundColor: '#e64a19' }
-                  }}
-                  onClick={() => {
-                    slide.button.link.startsWith('http')
-                      ? window.open(slide.button.link, '_blank')
-                      : navigate(slide.button.link);
-                  }}
+                  color="success"
+                  sx={{ alignSelf: 'flex-start', fontWeight: 'bold', borderRadius: 9999, px: 3, '&:hover': {
+                backgroundColor: '#2e7d32',
+                transform: 'scale(1.05)',
+                boxShadow: '0 6px 14px rgba(0,0,0,0.3)'
+              } }}
+                  onClick={() => slide.button.link.startsWith('http') ? window.open(slide.button.link, '_blank') : navigate(slide.button.link)}
                 >
                   {slide.button.text}
                 </Button>
@@ -146,138 +98,75 @@ const GraciasPorRegistrarte: React.FC = () => {
         </Carousel>
       </Container>
 
-      {/* Separador visual */}
       <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
 
-      {/* Cinta entre carrusel y video */}
-      <Box
-        sx={{
-            backgroundColor: '#F4511E',
-            color: '#fff',
-            py: { xs: 4, sm: 5 },  // antes era 6
-            px: 2,
-            textAlign: 'center'
-        }}
-        >
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          {/* Crea tu cuenta gratis */}
+      {/* Cinta promocional */}
+      <Box sx={{ backgroundColor: '#2E4A2C', color: '#fff', py: { xs: 5, sm: 6 }, px: 2, textAlign: 'center' }}>
+        <Typography variant="h5" fontWeight="bold" gutterBottom>
+          ¡Forma parte del honor de servir a Bolivia!
         </Typography>
-        <Typography variant="h6" gutterBottom>
-          Realiza tus primeras ventas en pocos pasos sin invertir nada para comenzar
+        <Typography variant="body1" gutterBottom>
+          Participa del proceso de pre registro del Servicio Militar Obligatorio. Prepárate en disciplina, liderazgo y compromiso con la patria.
         </Typography>
         <Button
           variant="contained"
           onClick={() => setOpenModal(true)}
-          sx={{
-            mt: 3,
-            backgroundColor: '#fff',
-            color: '#F4511E',
-            borderRadius: 9999,
-            fontWeight: 'bold',
-            px: 4,
-            py: 1.5,
-            '&:hover': { backgroundColor: '#eee' }
-          }}
+          sx={{ mt: 3, backgroundColor: '#f5f5f5', color: '#1b2d1c', borderRadius: 9999, fontWeight: 'bold', px: 4, py: 1.5, boxShadow: '0 2px 6px rgba(0,0,0,0.2)', '&:hover': { backgroundColor: '#eeeeee' } }}
           startIcon={<TouchAppIcon />}
         >
-          
-          Regístrate gratis →
+          Preinscribirme al Servicio Militar →
         </Button>
       </Box>
 
-      {/* Video Institucional */}
       <Container maxWidth="md">
         <Box sx={{ mt: 4 }}>
           <Typography variant="h6" textAlign="center" gutterBottom>
             Video Institucional
           </Typography>
-          <Box
-            sx={{
-              position: 'relative',
-              paddingTop: '56.25%',
-              borderRadius: 3,
-              overflow: 'hidden',
-              mb: 5
-            }}
-          >
+          <Typography variant="body1" textAlign="center" color="text.secondary" sx={{ mb: 2 }}>
+            Descubre cómo el Servicio Militar transforma vidas. ¡Mira nuestro video institucional!
+          </Typography>
+          <Box sx={{ position: 'relative', paddingTop: '56.25%', borderRadius: 3, overflow: 'hidden', mb: 5 }}>
             <iframe
               src="https://www.youtube.com/embed/JBxKJDUnkHQ"
               title="Video institucional"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-              }}
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
             />
           </Box>
         </Box>
+
+        <Box textAlign="center" mt={4}>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => setOpenModal(true)}
+            sx={{ borderRadius: 9999, fontWeight: 'bold', px: 4, py: 1.5 }}
+          >
+            ¡Estoy listo para preinscribirme!
+          </Button>
+        </Box>
+        <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
       </Container>
 
-      {/* Redes sociales flotantes */}
-      <Box
-        sx={{
-          position: 'fixed',
-          top: '35%',
-          right: 10,
-          display: { xs: 'none', sm: 'flex' },
-          flexDirection: 'column',
-          gap: 1,
-          zIndex: 1000
-        }}
-      >
-        <IconButton
-          href="https://www.facebook.com/mindefbolivia"
-          target="_blank"
-          sx={{
-            backgroundColor: '#1877f2',
-            color: '#fff',
-            '&:hover': { backgroundColor: '#145dbf' }
-          }}
-        >
-          <FacebookIcon />
-        </IconButton>
-        <IconButton
-          href="https://www.youtube.com/@MindefBolivia"
-          target="_blank"
-          sx={{
-            backgroundColor: '#ff0000',
-            color: '#fff',
-            '&:hover': { backgroundColor: '#cc0000' }
-          }}
-        >
-          <YouTubeIcon />
-        </IconButton>
-        <IconButton
-          href="https://www.tiktok.com/@mindefbolivia"
-          target="_blank"
-          sx={{
-            backgroundColor: '#00f2ea',
-            color: '#000',
-            '&:hover': { backgroundColor: '#00c9c2' }
-          }}
-        >
-          <TikTokIcon />
-        </IconButton>
+      {/* Redes sociales */}
+      <Box sx={{ position: 'fixed', top: '35%', right: 10, display: { xs: 'none', sm: 'flex' }, flexDirection: 'column', gap: 1, zIndex: 1000 }}>
+        <Tooltip title="Facebook"><IconButton href="https://www.facebook.com/mindefbolivia" target="_blank" sx={{ backgroundColor: '#1877f2', color: '#fff', '&:hover': { backgroundColor: '#145dbf' } }}><FacebookIcon /></IconButton></Tooltip>
+        <Tooltip title="YouTube"><IconButton href="https://www.youtube.com/@MindefBolivia" target="_blank" sx={{ backgroundColor: '#ff0000', color: '#fff', '&:hover': { backgroundColor: '#cc0000' } }}><YouTubeIcon /></IconButton></Tooltip>
+        <Tooltip title="TikTok"><IconButton href="https://www.tiktok.com/@mindefbolivia" target="_blank" sx={{ backgroundColor: '#00f2ea', color: '#000', '&:hover': { backgroundColor: '#00c9c2' } }}><TikTokIcon /></IconButton></Tooltip>
       </Box>
 
-      {/* Footer institucional */}
+      {/* Footer */}
       <Box sx={{ py: 3, textAlign: 'center', backgroundColor: '#0f0f0f' }}>
-        <img
-          src="https://www.mindef.gob.bo/sites/default/files/minlogo.png"
-          alt="Logo institucional"
-          style={{ maxWidth: 160, opacity: 0.6 }}
-        />
+        <img src="/siremil/minlogo.png" alt="Logo institucional" style={{ maxWidth: 160, opacity: 0.6 }} />
         <Typography variant="caption" color="gray" display="block" mt={1}>
           © 2025 Ministerio de Defensa - Todos los derechos reservados
         </Typography>
       </Box>
-      <ModalPreRegistro open={openModal} onClose={() => setOpenModal(false)} />
 
+      <ModalPreRegistro open={openModal} onClose={() => setOpenModal(false)} />
     </Box>
   );
 };
