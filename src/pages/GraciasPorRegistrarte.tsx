@@ -15,6 +15,88 @@ import ModalPreRegistro from '../components/ModalPreRegistro';
 import TikTokIcon from '../components/icons/TikTokIcon';
 import Headerweb from '../components/Headerweb';
 import TouchAppIcon from '@mui/icons-material/TouchApp';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+const getImageBase64FromUrl = async (url: string): Promise<string> => {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+};
+
+export const generarPDF = async (): Promise<void> => {
+  const logoBase64 = await getImageBase64FromUrl('/siremil/minlogo.png');
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // Logo
+  doc.addImage(logoBase64, 'PNG', 10, 8, 70, 0);
+
+  // Título principal
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('REQUISITOS Y BENEFICIOS DEL SERVICIO MILITAR', 14, 40);
+
+  // Línea divisoria
+  doc.setDrawColor(150);
+  doc.line(14, 42, 196, 42);
+
+  // Requisitos
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text('REQUISITOS:', 14, 50);
+  doc.setFont('helvetica', 'normal');
+  autoTable(doc, {
+    startY: 55,
+    body: [
+      ['• Tener entre 18 y 22 años'],
+      ['• Presentar cédula de identidad vigente'],
+      ['• Certificado de nacimiento original'],
+      ['• No tener antecedentes penales'],
+      ['• Aprobar revisión médica'],
+      ['• Número de cuenta bancaria en el Banco Unión'],
+      ['• Certificado de grupo sanguíneo'],
+    ],
+    styles: { fontSize: 12, textColor: [30, 30, 30], cellPadding: 2 },
+    theme: 'plain',
+    margin: { left: 20 },
+  });
+
+  // Beneficios
+  const yAfterRequisitos = (doc as any).lastAutoTable.finalY + 10;
+  doc.setFont('helvetica', 'bold');
+  doc.text('BENEFICIOS:', 14, yAfterRequisitos);
+  doc.setFont('helvetica', 'normal');
+  autoTable(doc, {
+    startY: yAfterRequisitos + 5,
+    body: [
+      ['• Permiso especial de 10 días'],
+      ['• Acceso a capacitación e instrucción de materias técnicas (Carpintería, Mecánica, Gastronomía, Inglés, Taekwondo, Jiu Jitsu y otros)'],
+      ['• Acceso a becas a institutos militares'],
+    ],
+    styles: { fontSize: 12, textColor: [30, 30, 30], cellPadding: 2 },
+    theme: 'plain',
+    margin: { left: 20 },
+  });
+
+  // PIE DE PÁGINA CENTRADO
+const pageHeight = doc.internal.pageSize.getHeight();
+doc.setFontSize(10);
+doc.setTextColor(100);
+doc.text(
+  'Ministerio de Defensa del Estado Plurinacional de Bolivia · www.mindef.gob.bo',
+  doc.internal.pageSize.getWidth() / 2,
+  pageHeight - 10,
+  { align: 'center' }
+);
+
+  doc.save('Requisitos_Beneficios_Servicio_Militar.pdf');
+};
 
 const slides = [
   {
@@ -45,7 +127,7 @@ const GraciasPorRegistrarte: React.FC = () => {
   const handleToggleSidebar = () => {
     setMobileOpen(!mobileOpen);
   };
-
+  
   return (
     <Box sx={{ backgroundColor: '#191c1f', color: '#FAFBFC', minHeight: '100vh', pt: 4 }}>
       <Headerweb onToggleSidebar={handleToggleSidebar} />
@@ -66,6 +148,16 @@ const GraciasPorRegistrarte: React.FC = () => {
             🇧🇴  <strong>Forma parte de la nueva generación que defiende la nación</strong><br />
             🌟 <strong>Vive una experiencia única, transformadora y honorable</strong>
           </Typography>
+          <Box textAlign="center" mt={4}>
+            <Button
+              variant="contained"
+              onClick={generarPDF}
+              startIcon={<PictureAsPdfIcon />}
+              color="success"
+            >
+              Descargar Requisitos y Beneficios (PDF)
+            </Button>
+          </Box>
         </Box>
 
         <Carousel autoPlay animation="fade" indicators={false} navButtonsAlwaysInvisible interval={4000}>

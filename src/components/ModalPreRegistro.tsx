@@ -125,7 +125,7 @@ export const generarFormularioPDF = async(values: any) => {
   nextTable([[values.departamento_residencia, values.provincia_residencia, 'BOLIVIA', '']], ['Departamento', 'Provincia', 'País', 'Casilla Postal']);
   nextTable([[values.direccion, values.celular, '0']], ['Dirección', 'Teléfono', 'Fax']);
 
-  sectionTitle('LUGAR DE PRESENTACIÓN A LA UNIDAD MILITAR');
+  sectionTitle('LUGAR DONDE TE HARÁN EL EXAMEN MÉDICO Y PRESENTACIÓN DE DOCUMENTOS');
   nextTable([[
     values.departamento_presentacion,
     values.provincia_presentacion,
@@ -134,7 +134,7 @@ export const generarFormularioPDF = async(values: any) => {
     `${values.fecha_presentacion}`, `${values.hora_presentacion}`, 
   ]], ['Depto', 'Provincia', 'Unidad Militara', 'País', 'Fecha de Presentación', 'Hora']);
 
-  sectionTitle('UNIDAD MILITAR DONDE REALIZARÁ EL SERVICIO MILITAR');
+  sectionTitle('UNIDAD MILITAR DE DESTINO DONDE HARÁS TU SERVICIO MILITAR');
   nextTable(
     values.cuentas_bancarias?.map((c: any) => [
       c.banco,
