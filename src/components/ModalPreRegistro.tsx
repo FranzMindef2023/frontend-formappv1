@@ -50,7 +50,7 @@ export const generarFormularioPDF = async(values: any) => {
   doc.setFont('helvetica', 'bold');
   // doc.text('MINISTERIO DE DEFENSA DE LAS FF.AA.', 45, 12);
   doc.setFontSize(13);
-  doc.text('FORMULARIO DE REGISTRO', 45, 28);
+  doc.text('FORMULARIO DE PRE-REGISTRO', 45, 28);
   doc.text('DEL SERVICIO MILITAR', 45, 34);
 
   doc.setFontSize(10);
@@ -264,7 +264,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
         const asignacion = data.asignacion_presentacion;
         const valuesPDF={
           ci: persona.ci,
-          lugar_expedicion: persona.expedido,
+          lugar_expedicion: persona.sigla_expedido,
           primer_apellido: persona.primer_apellido,
           segundo_apellido: persona.segundo_apellido,
           nombres: persona.nombres,
@@ -287,7 +287,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
         }
         setDatosPersona(valuesPDF);
         setRegistroMensaje(response.data.message); // <-- Este viene del backend
-        setMostrarBotonPDF(true); // ✅ ya estaba registrado
+        setMostrarBotonPDF(true); // ya estaba registrado
         return;
       }
 
@@ -303,8 +303,8 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
           token: recaptchaToken
         });
         setAlertAlets(true);
-        setIsSubmitting(false); // ✅ desbloquea siempre
-        // ✅ Extraer datos para PDF del nuevo registro
+        setIsSubmitting(false); // desbloquea siempre
+        // Extraer datos para PDF del nuevo registro
         const data = register.data.data;
         const persona = data.persona;
         const residencia = data.residencia_actual;
@@ -313,7 +313,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
 
         const valuesPDF = {
           ci: persona.ci,
-          lugar_expedicion: persona.expedido,
+          lugar_expedicion: persona.sigla_expedido,
           primer_apellido: persona.primer_apellido,
           segundo_apellido: persona.segundo_apellido,
           nombres: persona.nombres,
@@ -336,16 +336,16 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
         };
 
         setDatosPersona(valuesPDF); // para generar PDF
-        // ✅ Mostrar mensaje del backend
+        // Mostrar mensaje del backend
         setRegistroMensaje(register.data.message); // <-- Este viene del backend
-        // ✅ Mostrar botón de PDF
+        // Mostrar botón de PDF
         setRegistroExitoso(true);
-        setMostrarBotonPDF(true); // ✅ registro nuevo exitoso
+        setMostrarBotonPDF(true); // registro nuevo exitoso
         //onClose();
         formik.resetForm();
        setRecaptchaToken(null);
       } catch (error: unknown) {
-        setIsSubmitting(false); // ✅ desbloquea siempre
+        setIsSubmitting(false); // desbloquea siempre
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 422) {
           const errores = error.response.data.errors;
@@ -554,7 +554,7 @@ const ModalPreRegistro: React.FC<ModalPreRegistroProps> = ({ open, onClose }) =>
                 >
                   {departamentos.map((dpto: any) => (
                     <MenuItem key={dpto.id} value={dpto.id}>
-                      {dpto.sigla}
+                      {dpto.nombre}
                     </MenuItem>
                   ))}
                 </TextField>
