@@ -12,6 +12,7 @@ import GraciasPorRegistrarte from './pages/GraciasPorRegistrarte';
 import GraciasPorConsultar from './pages/GraciasPorConsultar';
 import Preinscritos from './pages/Preinscritos';
 import Resumen from './pages/Resumen';
+import CuadroInvitaciones from './pages/CuadroInvitaciones';
 
 const App: React.FC = () => {
   return (
@@ -56,6 +57,16 @@ const App: React.FC = () => {
             <PrivateRoute>
               <PrivateLayout>
                 <Resumen />
+              </PrivateLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/CuadroInvitaciones"
+          element={
+            <PrivateRoute>
+              <PrivateLayout>
+                <CuadroInvitaciones />
               </PrivateLayout>
             </PrivateRoute>
           }

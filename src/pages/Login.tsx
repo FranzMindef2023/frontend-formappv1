@@ -9,47 +9,53 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { login as loginService } from '../services/authService';
 import { useAuth } from '../auth/AuthContext';
 
-const Background = styled('div')(({ theme }) => ({
+// Fondo completo
+const Background = styled('div')({
   display: 'flex',
-  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'center',
   minHeight: '100vh',
   width: '100vw',
-  backgroundColor: '#191c1f',
-  color: '#FAFBFC',
-  overflowY: 'auto',
-  overflowX: 'clip',
-  [theme.breakpoints.down('md')]: {
-    flexDirection: 'column'
-  }
-}));
-
-const LoginBox = styled(Box)(({ theme }) => ({
-  flex: '0 0 25%',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  backgroundColor: '#191c1f',
-  color: '#FAFBFC',
-  padding: '2rem 1rem',
-  [theme.breakpoints.up('md')]: {
-    maxWidth: '400px',
-    padding: '2.5rem'
-  }
-}));
-
-const ImageSide = styled('div')(({ theme }) => ({
-  flex: '1 1 75%',
-  backgroundImage: 'url(https://sso.hotmart.com/themes/hotmart-custom/images/fire.jpg)',
+  backgroundImage: "url('/siremil/DSC_3023.JPG')",
   backgroundSize: 'cover',
   backgroundPosition: 'center',
   backgroundRepeat: 'no-repeat',
-  minHeight: '100vh',
-  [theme.breakpoints.down('md')]: {
-    display: 'none'
+  color: '#FAFBFC',
+  position: 'relative'
+});
+
+// LoginBox centrado
+const LoginBox = styled(Box)({
+  backgroundColor: 'rgba(25,28,31, 0.95)',
+  padding: '3rem',
+  borderRadius: '16px',
+  marginTop: '2rem',
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+  width: '100%',
+  maxWidth: '440px'
+});
+
+// Header institucional superior izquierdo
+const HeaderInstitutional = styled('div')(({ theme }) => ({
+  position: 'absolute',
+  top: '0px',
+  left: '0px',
+  width: '100%',
+  backgroundColor: '#fff',
+  padding: '8px 12px',
+  textAlign: 'center',
+  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+  zIndex: 10,
+
+  [theme.breakpoints.up('md')]: {
+    width: 'auto',
+    left: '20px',
+    top: '20px',
+    borderRadius: '8px',
+    padding: '8px 12px',
   }
 }));
 
@@ -64,23 +70,28 @@ const SocialButton = styled(Button)({
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [captcha, setCaptcha] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const formik = useFormik({
-    initialValues: {
-      email: 'juan@example.com',
-      password: 'password123'
-    },
+    initialValues: { email: '', password: '' },
     validationSchema: Yup.object({
-      email: Yup.string().email('Correo inválido').required('Obligatorio'),
-      password: Yup.string().required('Obligatorio')
+      email: Yup.string()
+    .matches(
+      /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/,
+      'Correo electrónico no válido'
+    )
+    .required('El correo electrónico es obligatorio'),
+  password: Yup.string()
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/,
+      'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial'
+    )
+    .required('La contraseña es obligatoria')
     }),
     onSubmit: async (values) => {
-      if (!captcha) return alert('Completa el reCAPTCHA');
       try {
-        const response = await loginService(values.email, values.password, captcha);
+        const response = await loginService(values.email, values.password);
         const token = response.data.access_token;
         const user = response.data.user || response.data.post;
         Cookies.set('token', token, { expires: 7 });
@@ -95,45 +106,43 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (Cookies.get('token')) navigate('/dashboard');
-  }, []);
+  }, [navigate]);
 
   return (
     <Background>
+      {/* LOGO INSTITUCIONAL SUPERIOR IZQUIERDO */}
+      <HeaderInstitutional>
+        <img src="/siremil/minlogo.png" alt="Ministerio de Defensa" style={{ height: '60px' }} />
+      </HeaderInstitutional>
+
       <LoginBox>
         <Container maxWidth="xs">
-          <Box display="flex" justifyContent="center" mb={3}>
-            <img
-              src="/siremil/logosire.png"
-              alt="Logo SIREMIL"
-              style={{
-                height: '300px', // aumenta la altura
-                maxWidth: '80%', // asegura que no se desborde en móviles
-                objectFit: 'contain'
+          {/* SOLO EL LOGO DEL SISTEMA DENTRO DEL FORMULARIO */}
+          <Box mb={3} textAlign="center">
+            <Box
+              sx={{
+                backgroundColor: '#fff',
+                padding: '10px 20px',
+                borderRadius: '12px',
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                display: 'inline-block'
               }}
-            />
+            >
+              <img src="/siremil/logSiremil.png" alt="SIREMIL" style={{ height: '100px' }} />
+            </Box>
           </Box>
 
-
-          <Typography variant="body2" mb={3}>
+          <Typography variant="body2" mb={1} textAlign="center">
             Inicia sesión con tu usuario y contraseña institucional para acceder al sistema de registro militar.
           </Typography>
-          {/* <Typography variant="h6" fontWeight="bold" gutterBottom>
-            SIREMIL
-          </Typography> */}
-
-          
+          <Typography variant="subtitle2" color="gray" textAlign="center" mb={3}>
+            Sistema de Registro Militar — Ministerio de Defensa
+          </Typography>
 
           <Box display="flex" gap={2} mb={3} flexWrap="wrap" justifyContent="center">
             <SocialButton startIcon={<img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" width="18" />}>Facebook</SocialButton>
-            <SocialButton startIcon={<img src="https://www.svgrepo.com/show/13671/youtube.svg" width="18" />}>Youtube</SocialButton>
-          </Box>
-          <Box display="flex" gap={2} mb={3} flexWrap="wrap" justifyContent="center">
-            <SocialButton startIcon={<img src="https://www.svgrepo.com/show/431991/tiktok.svg" width="18" />}>Tik Tok</SocialButton>
-            <SocialButton startIcon={<img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="18" />}>WhatsApp</SocialButton>
-          </Box>
-          <Box display="flex" gap={2} mb={3} flexWrap="wrap" justifyContent="center">
-            <SocialButton startIcon={<img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" width="18" />}>Apple</SocialButton>
-            <SocialButton startIcon={<img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18" />}>Google</SocialButton>
+            <SocialButton startIcon={<img src="https://www.svgrepo.com/show/13671/youtube.svg" width="18" />}>YouTube</SocialButton>
+            <SocialButton startIcon={<img src="https://www.svgrepo.com/show/431991/tiktok.svg" width="18" />}>TikTok</SocialButton>
           </Box>
 
           <form onSubmit={formik.handleSubmit}>
@@ -154,6 +163,7 @@ const Login: React.FC = () => {
                   InputProps={{ style: { backgroundColor: '#000', color: '#FAFBFC', borderRadius: 8 } }}
                   InputLabelProps={{ style: { color: '#FAFBFC' } }}
                 />
+
                 <TextField
                   fullWidth
                   label="Contraseña"
@@ -180,14 +190,6 @@ const Login: React.FC = () => {
                   InputLabelProps={{ style: { color: '#FAFBFC' } }}
                 />
               </Grid>
-              <Grid item xs={12}>
-                <Box mt={2}>
-                  <ReCAPTCHA
-                    sitekey="6LcCiC8rAAAAAEz-52pmoQgeuoJDdKnIK9QikqcV"
-                    onChange={(value) => setCaptcha(value)}
-                  />
-                </Box>
-              </Grid>
             </Grid>
 
             <Button
@@ -208,26 +210,17 @@ const Login: React.FC = () => {
             </Button>
           </form>
 
-    <Box mt={6} textAlign="center" fontSize="12px" color="#777">
-      <Divider sx={{ backgroundColor: '#333', my: 2 }} />
-      
-      {/* Logo institucional */}
-      <Box mb={1}>
-        <img src="/siremil/minlogo.png" alt="Logo Ministerio de Defensa" style={{ height: 60 }} />
-      </Box>
-
-      <Typography variant="caption" display="block">
-        Soporte — Términos de Uso — Política de Privacidad
-      </Typography>
-      <Typography variant="caption" display="block">
-        Desarrollado por <strong>Unidad de Sistemas e Informática Ministerio de Defensa</strong>
-      </Typography>
-    </Box>
-
-
+          <Box mt={6} textAlign="center" fontSize="12px" color="#777">
+            <Divider sx={{ backgroundColor: '#333', my: 2 }} />
+            <Typography variant="caption" display="block">
+              Soporte — Términos de Uso — Política de Privacidad
+            </Typography>
+            <Typography variant="caption" display="block">
+              Desarrollado por <strong>Unidad de Sistemas e Informática Ministerio de Defensa</strong>
+            </Typography>
+          </Box>
         </Container>
       </LoginBox>
-      <ImageSide />
     </Background>
   );
 };

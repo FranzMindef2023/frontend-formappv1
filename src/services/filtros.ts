@@ -40,3 +40,24 @@ export const getRelacionNominal = (params: {
 }) => {
   return client.get(`/relacion-nominal/${params.id_centro_reclutamiento}`);
 };
+
+//pre-militares
+export const getListasCentrosdeReclutamiento= (params: {
+  id_fuerza:number
+}) => {
+  return client.get('/listadecentrosdereclutamiento', { params });
+};
+
+export const getResumenRegistroPorUnidadMilitares = (params: {
+  id_fuerza?: number;
+  id_unidad_militar?: number;
+}) => {
+  return client.get('/invitaciones/resumen-por-unidad-militares', { params });
+};
+
+//nuevo api 
+export const getListaInvitados = (params: {
+  id_centro_reclutamiento: number;
+}) => {
+  return client.get(`/listado-invitados/${params.id_centro_reclutamiento}`);
+};

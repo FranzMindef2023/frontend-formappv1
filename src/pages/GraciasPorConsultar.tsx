@@ -1,130 +1,184 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
   Button,
   Container,
-  Grid,
-  IconButton
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import YouTubeIcon from '@mui/icons-material/YouTube';
-import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import Carousel from 'react-material-ui-carousel';
 import ModalConsultaPremilitar from '../components/ModalConsultaPremilitar';
+import TikTokIcon from '../components/icons/TikTokIcon';
+import Headerweb from '../components/Headerweb';
+import TouchAppIcon from '@mui/icons-material/TouchApp';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+const getImageBase64FromUrl = async (url: string): Promise<string> => {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+};
+
+export const generarPDF = async (): Promise<void> => {
+  const logoBase64 = await getImageBase64FromUrl('/siremil/minlogo.png');
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // Logo
+  doc.addImage(logoBase64, 'PNG', 10, 8, 70, 0);
+
+  // Título principal
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('REQUISITOS Y BENEFICIOS DEL SERVICIO MILITAR', 14, 40);
+
+  // Línea divisoria
+  doc.setDrawColor(150);
+  doc.line(14, 42, 196, 42);
+
+  // Requisitos
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text('REQUISITOS:', 14, 50);
+  doc.setFont('helvetica', 'normal');
+  autoTable(doc, {
+    startY: 55,
+    body: [
+      ['• Tener entre 18 y 22 años'],
+      ['• Presentar cédula de identidad vigente'],
+      ['• Certificado de nacimiento original'],
+      ['• Aprobar revisión médica'],
+      ['• Número de cuenta bancaria en el Banco Unión'],
+      ['• Certificado de grupo sanguíneo'],
+    ],
+    styles: { fontSize: 12, textColor: [30, 30, 30], cellPadding: 2 },
+    theme: 'plain',
+    margin: { left: 20 },
+  });
+
+  // Beneficios
+  const yAfterRequisitos = (doc as any).lastAutoTable.finalY + 10;
+  doc.setFont('helvetica', 'bold');
+  doc.text('BENEFICIOS:', 14, yAfterRequisitos);
+  doc.setFont('helvetica', 'normal');
+  autoTable(doc, {
+    startY: yAfterRequisitos + 5,
+    body: [
+      ['• Permiso especial de 10 días'],
+      ['• Acceso a los cursos de capacitación técnica'],
+      ['• Postulación a Becas'],
+    ],
+    styles: { fontSize: 12, textColor: [30, 30, 30], cellPadding: 2 },
+    theme: 'plain',
+    margin: { left: 20 },
+  });
+
+  // PIE DE PÁGINA CENTRADO
+const pageHeight = doc.internal.pageSize.getHeight();
+doc.setFontSize(10);
+doc.setTextColor(100);
+doc.text(
+  'Ministerio de Defensa del Estado Plurinacional de Bolivia · www.mindef.gob.bo',
+  doc.internal.pageSize.getWidth() / 2,
+  pageHeight - 10,
+  { align: 'center' }
+);
+
+  doc.save('Requisitos_Beneficios_Servicio_Militar.pdf');
+};
 
 const slides = [
   {
-    image: 'https://www.mindef.gob.bo/sites/default/files/styles/flexslider_full/public/3.jpg',
-    title: 'Consulta Informativa',
-    subtitle: 'Recibe orientación precisa sobre el proceso pre-militar',
-    button: { text: 'Más información', link: 'https://www.mindef.gob.bo' }
+    image: '/siremil/DSC_3023.JPG',
+    title: 'Acceso a los cursos de capacitación técnica',
+    subtitle: 'Prepárate con los mejores contenidos oficiales',
+    button: { text: 'Ver más', link: 'https://www.mindef.gob.bo' }
   },
   {
-    image: 'https://www.mindef.gob.bo/sites/default/files/styles/flexslider_full/public/4.jpg',
-    title: 'Convocatoria Premilitar 2025',
-    subtitle: 'Consulta requisitos y documentación necesaria',
-    button: { text: 'Consultar', link: '/formulario' }
+    image: '/siremil/DSC_1815.JPG',
+    title: 'Postulación a Becas',
+    subtitle: 'Participa del proceso de pre-registro nacional',
+    button: { text: 'Inscribirse ahora', link: '/formulario' }
   },
   {
-    image: 'https://www.mindef.gob.bo/sites/default/files/styles/flexslider_full/public/5.jpg',
-    title: 'Sistema de Consulta Oficial',
-    subtitle: 'Transparencia y respuesta institucional garantizada',
-    button: { text: 'Ir al sistema', link: '/dashboard' }
+    image: '/siremil/DSC_1835.JPG',
+    title: 'Permiso especial de 10 días',
+    subtitle: 'Seguridad, transparencia y control del proceso',
+    button: { text: 'Ir al sistema', link: 'https://www.mindef.gob.bo' }
   }
 ];
 
-const GraciasPorConsultar: React.FC = () => {
+const GraciasPorRegistrarte: React.FC = () => {
   const navigate = useNavigate();
-  const [openModal, setOpenModal] = React.useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
+  const handleToggleSidebar = () => {
+    setMobileOpen(!mobileOpen);
+  };
+  
   return (
     <Box sx={{ backgroundColor: '#191c1f', color: '#FAFBFC', minHeight: '100vh', pt: 4 }}>
+      <Headerweb onToggleSidebar={handleToggleSidebar} />
+
+      <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
+       <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
+
       <Container maxWidth="md">
         <Box textAlign="center" mb={4}>
-          <img
-            src="https://www.mindef.gob.bo/sites/default/files/minlogo.png"
-            alt="Ministerio de Defensa"
-            style={{ maxWidth: 220, marginBottom: 20 }}
-          />
           <Typography variant="h4" fontWeight="bold" color="#F4511E" gutterBottom>
-            ¡Gracias por tu consulta, pre-militar!
+            ¡Inscríbete al Servicio Militar y forma parte del cambio!
           </Typography>
           <Typography variant="body1" sx={{ mb: 3 }}>
-            Tu solicitud fue enviada correctamente. Revisa tu correo o vuelve a consultar más adelante.
+            Demuestra tu compromiso, tu fuerza y tu amor por Bolivia. El Servicio Militar no es solo una obligación, es una oportunidad de crecer, servir y dejar huella en la historia.
+            <br /><br />
+            ⚔️ <strong>Desarrolla disciplina, liderazgo y orgullo patriótico</strong><br />
+            🇧🇴  <strong>Forma parte de la nueva generación que defiende la nación</strong><br />
+            🌟 <strong>Vive una experiencia única, transformadora y honorable</strong>
           </Typography>
-          <Button
-            variant="contained"
-            onClick={() => navigate('/')}
-            sx={{
-              backgroundColor: '#F4511E',
-              borderRadius: 9999,
-              px: 4,
-              py: 1.5,
-              fontWeight: 'bold',
-              '&:hover': { backgroundColor: '#e64a19' }
-            }}
-          >
-            Volver al inicio
-          </Button>
+          <Box textAlign="center" mt={4}>
+            <Button
+              variant="contained"
+              onClick={generarPDF}
+              startIcon={<PictureAsPdfIcon />}
+              color="success"
+            >
+              Descargar Requisitos y Beneficios (PDF)
+            </Button>
+          </Box>
         </Box>
 
-        <Carousel
-          autoPlay
-          animation="fade"
-          indicators={false}
-          navButtonsAlwaysInvisible
-          interval={4000}
-        >
+        <Carousel autoPlay animation="fade" indicators={false} navButtonsAlwaysInvisible interval={4000}>
           {slides.map((slide, index) => (
             <Box
               key={index}
-              sx={{
-                height: { xs: 240, sm: 340 },
-                position: 'relative',
-                borderRadius: 3,
-                mb: 4,
-                overflow: 'hidden',
-                backgroundImage: `url(${slide.image})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
+              sx={{ height: { xs: 240, sm: 340 }, position: 'relative', borderRadius: 3, mb: 4, overflow: 'hidden', backgroundImage: `url(${slide.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
             >
               <Box
-                sx={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.85))',
-                  color: '#fff',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                  p: 3
-                }}
+                sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.4))', color: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', p: 3 }}
               >
-                <Typography variant="h5" fontWeight="bold" gutterBottom>
-                  {slide.title}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  {slide.subtitle}
-                </Typography>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>{slide.title}</Typography>
+                <Typography variant="body1" gutterBottom>{slide.subtitle}</Typography>
                 <Button
                   variant="contained"
                   size="small"
-                  sx={{
-                    alignSelf: 'flex-start',
-                    backgroundColor: '#F4511E',
-                    fontWeight: 'bold',
-                    borderRadius: 9999,
-                    px: 3,
-                    '&:hover': { backgroundColor: '#e64a19' }
-                  }}
-                  onClick={() => {
-                    slide.button.link.startsWith('http')
-                      ? window.open(slide.button.link, '_blank')
-                      : navigate(slide.button.link);
-                  }}
+                  color="success"
+                  sx={{ alignSelf: 'flex-start', fontWeight: 'bold', borderRadius: 9999, px: 3, '&:hover': {
+                backgroundColor: '#2e7d32',
+                transform: 'scale(1.05)',
+                boxShadow: '0 6px 14px rgba(0,0,0,0.3)'
+              } }}
+                  onClick={() => slide.button.link.startsWith('http') ? window.open(slide.button.link, '_blank') : navigate(slide.button.link)}
                 >
                   {slide.button.text}
                 </Button>
@@ -136,36 +190,21 @@ const GraciasPorConsultar: React.FC = () => {
 
       <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
 
-      <Box
-        sx={{
-          backgroundColor: '#F4511E',
-          color: '#fff',
-          py: { xs: 4, sm: 5 },
-          px: 2,
-          textAlign: 'center'
-        }}
-      >
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Realiza una nueva consulta
+      {/* Cinta promocional */}
+      <Box sx={{ backgroundColor: '#2E4A2C', color: '#fff', py: { xs: 5, sm: 6 }, px: 2, textAlign: 'center' }}>
+        <Typography variant="h5" fontWeight="bold" gutterBottom>
+          ¡Forma parte del honor de servir a Bolivia!
         </Typography>
-        <Typography variant="h6" gutterBottom>
-          Estamos aquí para orientarte en tu proceso premilitar
+        <Typography variant="body1" gutterBottom>
+          Participa del proceso de pre registro del Servicio Militar Obligatorio. Prepárate en disciplina, liderazgo y compromiso con la patria.
         </Typography>
         <Button
           variant="contained"
           onClick={() => setOpenModal(true)}
-          sx={{
-            mt: 3,
-            backgroundColor: '#fff',
-            color: '#F4511E',
-            borderRadius: 9999,
-            fontWeight: 'bold',
-            px: 4,
-            py: 1.5,
-            '&:hover': { backgroundColor: '#eee' }
-          }}
+          sx={{ mt: 3, backgroundColor: '#f5f5f5', color: '#1b2d1c', borderRadius: 9999, fontWeight: 'bold', px: 4, py: 1.5, boxShadow: '0 2px 6px rgba(0,0,0,0.2)', '&:hover': { backgroundColor: '#eeeeee' } }}
+          startIcon={<TouchAppIcon />}
         >
-          Nueva consulta →
+           Estoy listo para servir a mi patria →
         </Button>
       </Box>
 
@@ -174,81 +213,109 @@ const GraciasPorConsultar: React.FC = () => {
           <Typography variant="h6" textAlign="center" gutterBottom>
             Video Institucional
           </Typography>
-          <Box
-            sx={{
-              position: 'relative',
-              paddingTop: '56.25%',
-              borderRadius: 3,
-              overflow: 'hidden',
-              mb: 5
-            }}
+          <Typography
+            variant="body1"
+            textAlign="center"
+            color="#fff"
+            sx={{ mb: 2 }}
           >
+            Descubre cómo el Servicio Militar transforma vidas. ¡Mira nuestro video institucional!
+          </Typography>
+
+          <Box sx={{ position: 'relative', paddingTop: '56.25%', borderRadius: 3, overflow: 'hidden', mb: 5 }}>
             <iframe
-              src="https://www.youtube.com/embed/XdTT8zH-Wdg"
+              src="https://www.youtube.com/embed/JBxKJDUnkHQ"
               title="Video institucional"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%'
-              }}
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
             />
           </Box>
         </Box>
+
+        <Box textAlign="center" mt={4}>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => setOpenModal(true)}
+            sx={{ borderRadius: 9999, fontWeight: 'bold', px: 4, py: 1.5 }}
+            startIcon={<TouchAppIcon />}
+          >
+            Estoy listo para servir a mi patria →
+          </Button>
+        </Box>
+        <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
       </Container>
 
-      <Box
-        sx={{
-          position: 'fixed',
-          top: '35%',
-          right: 10,
-          display: { xs: 'none', sm: 'flex' },
-          flexDirection: 'column',
-          gap: 1,
-          zIndex: 1000
-        }}
-      >
-        <IconButton
-          href="https://www.facebook.com/mindefbolivia"
-          target="_blank"
-          sx={{ backgroundColor: '#1877f2', color: '#fff', '&:hover': { backgroundColor: '#145dbf' } }}
-        >
-          <FacebookIcon />
-        </IconButton>
-        <IconButton
-          href="https://www.youtube.com/@MindefBolivia"
-          target="_blank"
-          sx={{ backgroundColor: '#ff0000', color: '#fff', '&:hover': { backgroundColor: '#cc0000' } }}
-        >
-          <YouTubeIcon />
-        </IconButton>
-        <IconButton
-          href="https://www.tiktok.com/@mindefbolivia"
-          target="_blank"
-          sx={{ backgroundColor: '#00f2ea', color: '#000', '&:hover': { backgroundColor: '#00c9c2' } }}
-        >
-          <SportsEsportsIcon />
-        </IconButton>
+      {/* Redes sociales */}
+      <Box sx={{ position: 'fixed', top: '35%', right: 10, display: { xs: 'none', sm: 'flex' }, flexDirection: 'column', gap: 1, zIndex: 1000 }}>
+        <Tooltip title="Facebook"><IconButton href="https://www.facebook.com/mindefbolivia" target="_blank" sx={{ backgroundColor: '#1877f2', color: '#fff', '&:hover': { backgroundColor: '#145dbf' } }}><FacebookIcon /></IconButton></Tooltip>
+        <Tooltip title="YouTube"><IconButton href="https://www.youtube.com/@MindefBolivia" target="_blank" sx={{ backgroundColor: '#ff0000', color: '#fff', '&:hover': { backgroundColor: '#cc0000' } }}><YouTubeIcon /></IconButton></Tooltip>
+        <Tooltip title="TikTok"><IconButton href="https://www.tiktok.com/@mindefbolivia" target="_blank" sx={{ backgroundColor: '#00f2ea', color: '#000', '&:hover': { backgroundColor: '#00c9c2' } }}><TikTokIcon /></IconButton></Tooltip>
       </Box>
 
-      <Box sx={{ py: 3, textAlign: 'center', backgroundColor: '#0f0f0f' }}>
-        <img
-          src="https://www.mindef.gob.bo/sites/default/files/minlogo.png"
-          alt="Logo institucional"
-          style={{ maxWidth: 160, opacity: 0.6 }}
-        />
-        <Typography variant="caption" color="gray" display="block" mt={1}>
-          © 2025 Ministerio de Defensa - Todos los derechos reservados
-        </Typography>
+      {/* Footer */}
+      <Box
+        sx={{
+          py: 3,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          borderTop: '1px solid #e0e0e0',
+          overflowX: 'auto',
+        }}
+      >
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          gap={4}
+          sx={{
+            minWidth: 300,
+            px: 2,
+            flexWrap: 'nowrap',
+          }}
+        >
+          <Box sx={{ minWidth: 100 }}>
+            <img
+              src="/siremil/02_0.png"
+              alt="Ejército de Bolivia"
+              style={{ width: 100, height: 'auto' }}
+            />
+            <Typography variant="caption" display="block" mt={1}>
+              EJÉRCITO DE BOLIVIA
+            </Typography>
+          </Box>
+
+          <Box sx={{ minWidth: 100 }}>
+            <img
+              src="/siremil/03_0.png"
+              alt="Fuerza Aérea Boliviana"
+              style={{ width: 100, height: 'auto' }}
+            />
+            <Typography variant="caption" display="block" mt={1}>
+              FUERZA AÉREA BOLIVIANA
+            </Typography>
+          </Box>
+
+          <Box sx={{ minWidth: 100 }}>
+            <img
+              src="/siremil/04.png"
+              alt="Armada Boliviana"
+              style={{ width: 100, height: 'auto' }}
+            />
+            <Typography variant="caption" display="block" mt={1}>
+              ARMADA BOLIVIANA
+            </Typography>
+          </Box>
+        </Box>
       </Box>
+
+
 
       <ModalConsultaPremilitar open={openModal} onClose={() => setOpenModal(false)} />
     </Box>
   );
 };
 
-export default GraciasPorConsultar;
+export default GraciasPorRegistrarte;

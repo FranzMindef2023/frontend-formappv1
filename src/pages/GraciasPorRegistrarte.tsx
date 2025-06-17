@@ -57,7 +57,6 @@ export const generarPDF = async (): Promise<void> => {
       ['• Tener entre 18 y 22 años'],
       ['• Presentar cédula de identidad vigente'],
       ['• Certificado de nacimiento original'],
-      ['• No tener antecedentes penales'],
       ['• Aprobar revisión médica'],
       ['• Número de cuenta bancaria en el Banco Unión'],
       ['• Certificado de grupo sanguíneo'],
@@ -76,8 +75,8 @@ export const generarPDF = async (): Promise<void> => {
     startY: yAfterRequisitos + 5,
     body: [
       ['• Permiso especial de 10 días'],
-      ['• Acceso a capacitación e instrucción de materias técnicas (Carpintería, Mecánica, Gastronomía, Inglés, Taekwondo, Jiu Jitsu y otros)'],
-      ['• Acceso a becas a institutos militares'],
+      ['• Acceso a los cursos de capacitación técnica'],
+      ['• Postulación a Becas'],
     ],
     styles: { fontSize: 12, textColor: [30, 30, 30], cellPadding: 2 },
     theme: 'plain',
@@ -100,22 +99,22 @@ doc.text(
 
 const slides = [
   {
-    image: 'https://www.mindef.gob.bo/sites/default/files/styles/flexslider_full/public/3.jpg',
-    title: 'Curso Virtual Pre-Militar',
+    image: '/siremil/DSC_3023.JPG',
+    title: 'Acceso a los cursos de capacitación técnica',
     subtitle: 'Prepárate con los mejores contenidos oficiales',
     button: { text: 'Ver más', link: 'https://www.mindef.gob.bo' }
   },
   {
-    image: 'https://www.mindef.gob.bo/sites/default/files/styles/flexslider_full/public/4.jpg',
-    title: 'Convocatoria Abierta 2025',
-    subtitle: 'Participa del proceso de preinscripción nacional',
+    image: '/siremil/DSC_1815.JPG',
+    title: 'Postulación a Becas',
+    subtitle: 'Participa del proceso de pre-registro nacional',
     button: { text: 'Inscribirse ahora', link: '/formulario' }
   },
   {
-    image: 'https://www.mindef.gob.bo/sites/default/files/styles/flexslider_full/public/5.jpg',
-    title: 'Sistema de Registro Oficial',
+    image: '/siremil/DSC_1835.JPG',
+    title: 'Permiso especial de 10 días',
     subtitle: 'Seguridad, transparencia y control del proceso',
-    button: { text: 'Ir al sistema', link: '/dashboard' }
+    button: { text: 'Ir al sistema', link: 'https://www.mindef.gob.bo' }
   }
 ];
 
@@ -133,7 +132,6 @@ const GraciasPorRegistrarte: React.FC = () => {
       <Headerweb onToggleSidebar={handleToggleSidebar} />
 
       <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
-       <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
        <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
 
       <Container maxWidth="md">
@@ -206,7 +204,7 @@ const GraciasPorRegistrarte: React.FC = () => {
           sx={{ mt: 3, backgroundColor: '#f5f5f5', color: '#1b2d1c', borderRadius: 9999, fontWeight: 'bold', px: 4, py: 1.5, boxShadow: '0 2px 6px rgba(0,0,0,0.2)', '&:hover': { backgroundColor: '#eeeeee' } }}
           startIcon={<TouchAppIcon />}
         >
-          Preinscribirme al Servicio Militar →
+           Estoy listo para servir a mi patria →
         </Button>
       </Box>
 
@@ -215,9 +213,15 @@ const GraciasPorRegistrarte: React.FC = () => {
           <Typography variant="h6" textAlign="center" gutterBottom>
             Video Institucional
           </Typography>
-          <Typography variant="body1" textAlign="center" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography
+            variant="body1"
+            textAlign="center"
+            color="#fff"
+            sx={{ mb: 2 }}
+          >
             Descubre cómo el Servicio Militar transforma vidas. ¡Mira nuestro video institucional!
           </Typography>
+
           <Box sx={{ position: 'relative', paddingTop: '56.25%', borderRadius: 3, overflow: 'hidden', mb: 5 }}>
             <iframe
               src="https://www.youtube.com/embed/JBxKJDUnkHQ"
@@ -236,8 +240,9 @@ const GraciasPorRegistrarte: React.FC = () => {
             color="success"
             onClick={() => setOpenModal(true)}
             sx={{ borderRadius: 9999, fontWeight: 'bold', px: 4, py: 1.5 }}
+            startIcon={<TouchAppIcon />}
           >
-            ¡Estoy listo para preinscribirme!
+            Estoy listo para servir a mi patria →
           </Button>
         </Box>
         <Box sx={{ height: { xs: 24, sm: 32, md: 48 } }} />
@@ -251,12 +256,62 @@ const GraciasPorRegistrarte: React.FC = () => {
       </Box>
 
       {/* Footer */}
-      <Box sx={{ py: 3, textAlign: 'center', backgroundColor: '#0f0f0f' }}>
-        <img src="/siremil/minlogo.png" alt="Logo institucional" style={{ maxWidth: 160, opacity: 0.6 }} />
-        <Typography variant="caption" color="gray" display="block" mt={1}>
-          © 2025 Ministerio de Defensa - Todos los derechos reservados
-        </Typography>
+      <Box
+        sx={{
+          py: 3,
+          textAlign: 'center',
+          backgroundColor: '#fff',
+          borderTop: '1px solid #e0e0e0',
+          overflowX: 'auto',
+        }}
+      >
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          gap={4}
+          sx={{
+            minWidth: 300,
+            px: 2,
+            flexWrap: 'nowrap',
+          }}
+        >
+          <Box sx={{ minWidth: 100 }}>
+            <img
+              src="/siremil/02_0.png"
+              alt="Ejército de Bolivia"
+              style={{ width: 100, height: 'auto' }}
+            />
+            <Typography variant="caption" display="block" mt={1}>
+              EJÉRCITO DE BOLIVIA
+            </Typography>
+          </Box>
+
+          <Box sx={{ minWidth: 100 }}>
+            <img
+              src="/siremil/03_0.png"
+              alt="Fuerza Aérea Boliviana"
+              style={{ width: 100, height: 'auto' }}
+            />
+            <Typography variant="caption" display="block" mt={1}>
+              FUERZA AÉREA BOLIVIANA
+            </Typography>
+          </Box>
+
+          <Box sx={{ minWidth: 100 }}>
+            <img
+              src="/siremil/04.png"
+              alt="Armada Boliviana"
+              style={{ width: 100, height: 'auto' }}
+            />
+            <Typography variant="caption" display="block" mt={1}>
+              ARMADA BOLIVIANA
+            </Typography>
+          </Box>
+        </Box>
       </Box>
+
+
 
       <ModalPreRegistro open={openModal} onClose={() => setOpenModal(false)} />
     </Box>

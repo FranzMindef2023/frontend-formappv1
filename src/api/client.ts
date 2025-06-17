@@ -27,7 +27,7 @@ client.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       Cookies.remove('token');
-      window.location.href = '/login';
+      window.location.href = '/siremil/login';
     }
     return Promise.reject(error);
   }
